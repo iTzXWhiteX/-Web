@@ -1,0 +1,6 @@
+{
+  "name": "White Kingdom | Competitive PvP & Tier Testing",
+  "description": "Official website for the White Kingdom Discord PvP community. Real-time tier tests, player rankings, game modes, announcements, and Discord authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

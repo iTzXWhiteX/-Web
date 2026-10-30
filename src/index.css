@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #060913;
+    color: #f1f5f9;
+    font-family: 'Cairo', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Cairo', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+  }
+}
+
+/* Glassmorphism card styles */
+.glass-panel {
+  background: rgba(10, 16, 31, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 229, 255, 0.14);
+}
+
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Rotating Rainbow Glowing Animation on Button Click / Active */
+@keyframes rainbow-spin-glow {
+  0% {
+    box-shadow: 0 0 20px #ff0055, 0 0 35px #ff5500, 0 0 50px rgba(255, 0, 85, 0.4);
+    border-color: #ff0055 !important;
+  }
+  14% {
+    box-shadow: 0 0 20px #ff7700, 0 0 35px #ffcc00, 0 0 50px rgba(255, 119, 0, 0.4);
+    border-color: #ff7700 !important;
+  }
+  28% {
+    box-shadow: 0 0 20px #ffea00, 0 0 35px #77ff00, 0 0 50px rgba(255, 234, 0, 0.4);
+    border-color: #ffea00 !important;
+  }
+  42% {
+    box-shadow: 0 0 20px #00ff66, 0 0 35px #00ffff, 0 0 50px rgba(0, 255, 102, 0.4);
+    border-color: #00ff66 !important;
+  }
+  57% {
+    box-shadow: 0 0 20px #00c8ff, 0 0 35px #0055ff, 0 0 50px rgba(0, 200, 255, 0.4);
+    border-color: #00c8ff !important;
+  }
+  71% {
+    box-shadow: 0 0 20px #7b00ff, 0 0 35px #cc00ff, 0 0 50px rgba(123, 0, 255, 0.4);
+    border-color: #7b00ff !important;
+  }
+  85% {
+    box-shadow: 0 0 20px #ff00c8, 0 0 35px #ff0055, 0 0 50px rgba(255, 0, 200, 0.4);
+    border-color: #ff00c8 !important;
+  }
+  100% {
+    box-shadow: 0 0 20px #ff0055, 0 0 35px #ff5500, 0 0 50px rgba(255, 0, 85, 0.4);
+    border-color: #ff0055 !important;
+  }
+}
+
+/* Button Hover Scale Highlight & Rainbow Spin on Press */
+button, .btn-interactive {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease;
+  will-change: transform, box-shadow;
+}
+
+button:hover, .btn-interactive:hover {
+  transform: scale(1.035) translateY(-2px) !important;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.35), 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+button:active, .btn-interactive:active {
+  animation: rainbow-spin-glow 1.2s linear infinite !important;
+  transform: scale(0.97) translateY(0px) !important;
+}
+
+/* Page Entry Fade In Animation */
+@keyframes page-enter-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.page-enter {
+  animation: page-enter-fade 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* Scroll Fade In / Out Animation */
+.scroll-fade {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-fade.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Cyber card glowing accent borders */
+.cyber-card {
+  position: relative;
+  background: rgba(9, 14, 28, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 229, 255, 0.16);
+  border-radius: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cyber-card:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.15), 0 12px 35px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .scroll-fade {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  button:hover,
+  .btn-interactive:hover {
+    transform: none !important;
+  }
+  button:active,
+  .btn-interactive:active {
+    animation: none !important;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060913;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0284c7;
+}

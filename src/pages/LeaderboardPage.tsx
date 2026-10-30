@@ -1,0 +1,283 @@
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Trophy, X, Swords, FileText, CheckCircle2 } from 'lucide-react';
+import { PublicLeaderboardItem, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
+
+interface LeaderboardPageProps {
+  leaderboard: PublicLeaderboardItem[];
+  onNavigate: (page: string) => void;
+}
+
+export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
+  leaderboard,
+  onNavigate,
+}) => {
+  const [selectedPlayer, setSelectedPlayer] = useState<PublicLeaderboardItem | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 40);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const getTierInfo = (tierName: string) => {
+    return WHITE_KINGDOM_TIERS.find(t => t.name.toLowerCase() === tierName.toLowerCase()) || {
+      name: tierName,
+      label: tierName,
+      rank: 5,
+      color: '#00e5ff',
+      badgeBg: 'bg-cyan-500/20',
+      badgeBorder: 'border-cyan-400/60',
+    };
+  };
+
+  return (
+    <div
+      dir="rtl"
+      className={`max-w-4xl mx-auto px-4 sm:px-6 py-12 relative z-10 transition-all duration-700 ease-out ${
+        loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6 motion-reduce:opacity-100 motion-reduce:translate-y-0'
+      }`}
+    >
+      {/* Top Navigation Back */}
+      <button
+        onClick={() => onNavigate('home')}
+        className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-300 transition-colors mb-8 cursor-pointer group"
+      >
+        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        <span>العودة إلى الصفحة الرئيسية</span>
+      </button>
+
+      {/* Header */}
+      <div className="text-center mb-10 space-y-2">
+        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mb-2">
+          <Trophy className="w-7 h-7" />
+        </div>
+        <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-white tracking-wide">
+          قائمة المتصدرين والمستويات
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-400">
+          مرتبة تلقائياً بناءً على تقييمات واختبارات السيرفر (اضغط على أي لاعب لعرض تفاصيل الاختبار)
+        </p>
+      </div>
+
+      {/* Leaderboard Table / Cards */}
+      <div className="glass-panel rounded-3xl border border-cyan-500/25 shadow-2xl overflow-hidden">
+        {leaderboard && leaderboard.length > 0 ? (
+          <div className="divide-y divide-slate-800/80">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 px-6 py-4 bg-slate-900/90 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 text-right">
+              <div className="col-span-2 sm:col-span-1 text-center">الترتيب</div>
+              <div className="col-span-10 sm:col-span-11 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+                <div>اللاعب (ماين كرافت)</div>
+                <div>حساب ديسكورد</div>
+                <div className="text-center sm:text-left">التقييم العام (Tier)</div>
+              </div>
+            </div>
+
+            {/* Player Entries */}
+            {leaderboard.map((player) => {
+              const isTop1 = player.rank === 1;
+              const isTop2 = player.rank === 2;
+              const isTop3 = player.rank === 3;
+              const tierInfo = getTierInfo(player.tierName);
+
+              return (
+                <div
+                  key={`${player.rank}-${player.minecraftName}`}
+                  onClick={() => setSelectedPlayer(player)}
+                  className={`grid grid-cols-12 px-6 py-4 items-center transition-all cursor-pointer text-right group ${
+                    isTop1
+                      ? 'bg-amber-500/5 hover:bg-amber-500/15'
+                      : isTop2
+                      ? 'bg-slate-300/5 hover:bg-slate-300/15'
+                      : isTop3
+                      ? 'bg-amber-700/5 hover:bg-amber-700/15'
+                      : 'hover:bg-cyan-950/20'
+                  }`}
+                  title="اضغط لعرض تفاصيل الاختبار والألعاب والملاحظات"
+                >
+                  {/* Rank Badge */}
+                  <div className="col-span-2 sm:col-span-1 flex items-center justify-center">
+                    <span
+                      className={`inline-flex items-center justify-center w-8 h-8 rounded-xl font-mono text-xs font-bold transition-transform group-hover:scale-110 ${
+                        isTop1
+                          ? 'bg-gradient-to-tr from-amber-500 to-yellow-300 text-black shadow-md shadow-amber-500/30'
+                          : isTop2
+                          ? 'bg-gradient-to-tr from-slate-300 to-slate-100 text-black shadow-md'
+                          : isTop3
+                          ? 'bg-gradient-to-tr from-amber-700 to-amber-500 text-white shadow-md'
+                          : 'bg-slate-800/80 text-slate-300 border border-slate-700/50'
+                      }`}
+                    >
+                      #{player.rank}
+                    </span>
+                  </div>
+
+                  {/* Player Information (Minecraft Name + Discord Name & Avatar + Tier Badge) */}
+                  <div className="col-span-10 sm:col-span-11 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center pr-2 sm:pr-0">
+                    
+                    {/* 1. Minecraft Username */}
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white text-sm sm:text-base tracking-wide group-hover:text-cyan-300 transition-colors">
+                        {player.minecraftName}
+                      </span>
+                    </div>
+
+                    {/* 2. Discord Profile Picture & Display Name */}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={player.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                        alt={player.discordDisplayName}
+                        className="w-9 h-9 rounded-full object-cover border border-cyan-500/40 shadow-sm flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+                        }}
+                      />
+                      <span className="text-sm font-medium text-slate-200 truncate">
+                        {player.discordDisplayName}
+                      </span>
+                    </div>
+
+                    {/* 3. Tier Rating Badge (Required: خلي تقييم اللاعب الي هو الtier كام يظهر) */}
+                    <div className="flex items-center justify-start sm:justify-end gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold border shadow-sm ${
+                          tierInfo.badgeBg || 'bg-cyan-500/20'
+                        } ${tierInfo.badgeBorder || 'border-cyan-400/60'} text-white`}
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tierInfo.color || '#00e5ff' }} />
+                        <span>{player.tierName}</span>
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-12 text-center text-slate-400 text-sm">
+            لا يوجد لاعبين مسجلين في قائمة المتصدرين حالياً.
+          </div>
+        )}
+      </div>
+
+      {/* Player Test Breakdown Details Modal (Required: اي حد يضغط يشوف هو لعب ايه وملاحظات ايه واسم حسابه ماين كرافت، مع اخفاء معرّف الديسكورد تماماً) */}
+      {selectedPlayer && (
+        <div
+          dir="rtl"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setSelectedPlayer(null)}
+        >
+          <div
+            className="relative w-full max-w-lg glass-panel rounded-3xl border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(0,229,255,0.25)] text-right space-y-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedPlayer(null)}
+              className="absolute top-5 left-5 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="إغلاق"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Modal Player Header */}
+            <div className="flex items-center gap-4 border-b border-slate-800 pb-5">
+              <img
+                src={selectedPlayer.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                alt={selectedPlayer.discordDisplayName}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-500/60 shadow-lg"
+              />
+              <div className="space-y-1">
+                <div className="text-xs text-cyan-400 font-mono font-semibold">
+                  الترتيب العام: #{selectedPlayer.rank}
+                </div>
+                <h3 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
+                  {selectedPlayer.minecraftName}
+                </h3>
+                <div className="text-xs text-slate-300">
+                  حساب ديسكورد: <span className="font-semibold text-white">{selectedPlayer.discordDisplayName}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Tier Achievement Badge */}
+            <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="text-[11px] font-mono text-cyan-300">المستوى المعتمد (Achieved Tier)</div>
+                <div className="text-lg font-bold text-white">
+                  {getTierInfo(selectedPlayer.tierName).label || selectedPlayer.tierName}
+                </div>
+              </div>
+              <span className="px-3.5 py-1.5 rounded-xl font-mono text-sm font-extrabold bg-cyan-500 text-black shadow-md">
+                {selectedPlayer.tierName}
+              </span>
+            </div>
+
+            {/* Games Played / Tested Disciplines (هو لعب ايه) */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider">
+                <Swords className="w-4 h-4" />
+                <span>الألعاب والمودات التي تم اختبارها:</span>
+              </div>
+
+              {selectedPlayer.gamesPlayed && selectedPlayer.gamesPlayed.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedPlayer.gamesPlayed.map((game, i) => (
+                    <div
+                      key={i}
+                      className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="font-bold text-white text-sm flex items-center gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                          <span>{game.gameName}</span>
+                        </div>
+                        {game.details && (
+                          <div className="text-slate-400 text-[11px] pr-5">
+                            {game.details}
+                          </div>
+                        )}
+                      </div>
+                      {game.score && (
+                        <div className="font-mono font-bold text-cyan-300 px-2.5 py-1 rounded-lg bg-black/40 border border-cyan-500/30 text-xs">
+                          {game.score}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400">
+                  تم إجراء الاختبار التقييمي الشامل عبر مودات القتال المعتمدة.
+                </div>
+              )}
+            </div>
+
+            {/* Evaluator Notes & Observations (اتحطله ملاحظات ايه) */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider">
+                <FileText className="w-4 h-4" />
+                <span>ملاحظات المدرب وتوجيهات الاختبار:</span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
+                {selectedPlayer.notes || 'لم يتم تسجيل ملاحظات إضافية لهذا الاختبار.'}
+              </div>
+            </div>
+
+            {/* Close Button */}
+            <div className="pt-2">
+              <button
+                onClick={() => setSelectedPlayer(null)}
+                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                إغلاق النافذة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
