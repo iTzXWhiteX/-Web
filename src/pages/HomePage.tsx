@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Info, Swords, Youtube, ArrowLeft, Newspaper, Sparkles } from 'lucide-react';
+import { Info, Server, Swords, Youtube, ArrowLeft, Newspaper, Sparkles } from 'lucide-react';
 import { WhiteKingdomLogo } from '../components/WhiteKingdomLogo.js';
 
 interface HomePageProps {
@@ -142,16 +142,16 @@ export const HomePage: React.FC<HomePageProps> = ({
             </a>
           )}
           
-          {/* Button 1: About the Server */}
+          {/* Button 1: The Server (Unified Info & News) */}
           <button
-            onClick={() => onNavigate('about')}
+            onClick={() => onNavigate('server')}
             className="w-full py-3.5 px-6 rounded-2xl glass-panel hover:bg-slate-800/80 border border-cyan-500/30 text-white font-heading font-bold text-base flex items-center justify-between group shadow-lg shadow-cyan-950/30 cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500 group-hover:text-black transition-all">
-                <Info className="w-5 h-5" />
+                <Server className="w-5 h-5" />
               </div>
-              <span className="tracking-wide">عن السيرفر</span>
+              <span className="tracking-wide">السيرفر (معلومات وآخر الأخبار)</span>
             </div>
             <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-cyan-300 group-hover:-translate-x-1 transition-all" />
           </button>
@@ -168,20 +168,6 @@ export const HomePage: React.FC<HomePageProps> = ({
               <span className="tracking-wide">اختبار المستويات (Tier Test)</span>
             </div>
             <ArrowLeft className="w-5 h-5 text-white/80 group-hover:text-white group-hover:-translate-x-1 transition-all" />
-          </button>
-
-          {/* Button 3: News (الزر الجديد) */}
-          <button
-            onClick={() => onNavigate('news')}
-            className="w-full py-3.5 px-6 rounded-2xl glass-panel hover:bg-amber-950/20 border border-amber-500/30 hover:border-amber-400 text-white font-heading font-bold text-base flex items-center justify-between group shadow-lg shadow-amber-950/20 cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-black transition-all">
-                <Newspaper className="w-5 h-5" />
-              </div>
-              <span className="tracking-wide">الأخبار والإعلانات (News)</span>
-            </div>
-            <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-amber-400 group-hover:-translate-x-1 transition-all" />
           </button>
 
           {/* Button 4: My YouTube */}

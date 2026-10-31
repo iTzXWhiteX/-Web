@@ -36,8 +36,19 @@ export function resolveDiscordAvatar(discordId: string, customAvatar?: string): 
  */
 export function getTierRank(tierName: string, tierDefinitions: TierDefinition[] = WHITE_KINGDOM_TIERS): number {
   if (!tierName) return 0;
-  const match = tierDefinitions.find(t => t.name.toLowerCase() === tierName.trim().toLowerCase());
-  return match ? match.rank : 0;
+  const clean = tierName.trim().toLowerCase();
+  const match = tierDefinitions.find(t => t.name.toLowerCase() === clean);
+  if (match) return match.rank;
+
+  // Fallback calculation for dynamic tiers like LT6, HT6, etc.
+  const m = clean.match(/^(ht|lt)(\d+)$/);
+  if (m) {
+    const isHt = m[1] === 'ht';
+    const num = parseInt(m[2], 10);
+    const base = isHt ? 12 - num * 2 : 11 - num * 2;
+    return Math.max(0, base);
+  }
+  return 0;
 }
 
 /**
@@ -52,7 +63,7 @@ export function getTierRank(tierName: string, tierDefinitions: TierDefinition[] 
  * - notes (for the details popup)
  * Strictly omits discordId to preserve user privacy as requested.
  */
-export function formatPublicLeaderboard(players: LeaderboardPlayer[]): PublicLeaderboardItem[] {
+export function formatPublicLeaderboard(players: LeaderboardPlayer[], tierDefinitions?: TierDefinition[]): PublicLeaderboardItem[] {
   const sorted = [...players].sort((a, b) => {
     if (b.tierRank !== a.tierRank) {
       return b.tierRank - a.tierRank;
@@ -68,7 +79,7 @@ export function formatPublicLeaderboard(players: LeaderboardPlayer[]): PublicLea
     discordUsername: p.discordUsername || undefined,
     discordAvatar: resolveDiscordAvatar(p.discordId, p.discordAvatar),
     tierName: p.tierName || 'HT1',
-    tierRank: p.tierRank || getTierRank(p.tierName || 'HT1'),
+    tierRank: p.tierRank || getTierRank(p.tierName || 'HT1', tierDefinitions),
     gamesPlayed: Array.isArray(p.gamesPlayed) ? p.gamesPlayed : [],
     notes: p.notes || '',
   }));

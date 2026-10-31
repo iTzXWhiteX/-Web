@@ -1,21 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Trophy, Server, ShieldAlert } from 'lucide-react';
-import { TestServer } from '../types/pvp.js';
+import { ArrowRight, Trophy, Server, ShieldAlert, Award } from 'lucide-react';
+import { TestServer, TierDefinition, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
 
 interface TierTestPageProps {
   content: string;
   testServers: TestServer[];
+  tiers?: TierDefinition[];
   onNavigate: (page: string) => void;
 }
 
 export const TierTestPage: React.FC<TierTestPageProps> = ({
   content,
   testServers,
+  tiers,
   onNavigate,
 }) => {
   const [loaded, setLoaded] = useState(false);
   const serversRef = useRef<HTMLDivElement>(null);
   const [serversVisible, setServersVisible] = useState(false);
+  const activeTiers = tiers && tiers.length > 0 ? tiers : WHITE_KINGDOM_TIERS;
 
   useEffect(() => {
     // Immediate fade in on page open
@@ -82,6 +85,42 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
             {content || 'سيتم وضع تعليمات وشروط الاختبار من قِبل إدارة السيرفر هنا.'}
           </div>
         </div>
+
+        {/* Server Official Tiers Showcase */}
+        {activeTiers && activeTiers.length > 0 && (
+          <div className="pt-6 border-t border-slate-800 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider">
+              <Award className="w-4 h-4 text-cyan-400" />
+              <span>مستويات وتصنيفات السيرفر التنافسية (Tiers)</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {activeTiers.map(tier => (
+                <div
+                  key={tier.name}
+                  className="p-3.5 rounded-2xl border transition-all flex flex-col items-center justify-center text-center gap-1.5 shadow-md hover:scale-105"
+                  style={{
+                    backgroundColor: `${tier.color}15`,
+                    borderColor: `${tier.color}40`,
+                    boxShadow: `0 0 15px ${tier.color}15`,
+                  }}
+                >
+                  <span
+                    className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-extrabold text-white"
+                    style={{ backgroundColor: tier.color }}
+                  >
+                    {tier.name}
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-200 truncate w-full">
+                    {tier.label || tier.name}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    الرتبة: #{tier.rank}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Supported Test Servers Section with Images & Text */}
         {testServers && testServers.length > 0 && (

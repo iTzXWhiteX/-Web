@@ -54,7 +54,7 @@ export function getSessionUser(req: Request): UserProfile | null {
   const user = db.getUser(discordId);
   if (!user) {
     // If user record doesn't exist yet, create basic stub
-    return db.upsertUser({ discordId });
+    return db.upsertUserSync({ discordId });
   }
 
   // Ensure admin status is fresh

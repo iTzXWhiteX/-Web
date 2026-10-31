@@ -9,6 +9,7 @@ import { Footer } from './components/Footer.js';
 import { DiscordAuthModal } from './components/DiscordAuthModal.js';
 import { AmbientBackgroundLogo } from './components/WhiteKingdomLogo.js';
 import { HomePage } from './pages/HomePage.js';
+import { ServerPage } from './pages/ServerPage.js';
 import { AboutPage } from './pages/AboutPage.js';
 import { TierTestPage } from './pages/TierTestPage.js';
 import { LeaderboardPage } from './pages/LeaderboardPage.js';
@@ -21,6 +22,8 @@ import {
   PublicLeaderboardItem,
   NewsArticle,
   ServerRole,
+  TierDefinition,
+  WHITE_KINGDOM_TIERS,
 } from './types/pvp.js';
 
 export default function App() {
@@ -42,6 +45,7 @@ export default function App() {
   const [leaderboard, setLeaderboard] = useState<PublicLeaderboardItem[]>([]);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [roles, setRoles] = useState<ServerRole[]>([]);
+  const [tiers, setTiers] = useState<TierDefinition[]>(WHITE_KINGDOM_TIERS);
   const [loading, setLoading] = useState(true);
 
   // Fetch Public Data
@@ -55,6 +59,7 @@ export default function App() {
         if (data.leaderboard) setLeaderboard(data.leaderboard);
         if (data.newsArticles) setNewsArticles(data.newsArticles);
         if (data.roles) setRoles(data.roles);
+        if (data.tiers) setTiers(data.tiers);
       }
     } catch (err) {
       console.error('Error fetching public data:', err);
@@ -94,14 +99,12 @@ export default function App() {
       const hash = window.location.hash.replace('#', '').trim().toLowerCase();
       if (!hash || hash === 'home') {
         setActivePage('home');
-      } else if (hash === 'about') {
-        setActivePage('about');
+      } else if (hash === 'server' || hash === 'about' || hash === 'news') {
+        setActivePage('server');
       } else if (hash === 'tier-test' || hash === 'tiertest' || hash === 'tiers') {
         setActivePage('tier-test');
       } else if (hash === 'leaderboard') {
         setActivePage('leaderboard');
-      } else if (hash === 'news') {
-        setActivePage('news');
       } else if (hash === 'admin') {
         setActivePage('admin');
       } else {
@@ -184,11 +187,14 @@ export default function App() {
               />
             )}
 
-            {activePage === 'about' && (
-              <AboutPage
+            {(activePage === 'server' || activePage === 'about' || activePage === 'news') && (
+              <ServerPage
                 serverName={settings.serverName}
                 logoUrl={settings.logoUrl}
-                content={settings.aboutContent}
+                aboutContent={settings.aboutContent}
+                newsContent={settings.newsContent}
+                newsArticles={newsArticles}
+                roles={roles}
                 onNavigate={navigateTo}
               />
             )}
@@ -197,6 +203,7 @@ export default function App() {
               <TierTestPage
                 content={settings.tierTestContent}
                 testServers={testServers}
+                tiers={tiers}
                 onNavigate={navigateTo}
               />
             )}
@@ -204,15 +211,7 @@ export default function App() {
             {activePage === 'leaderboard' && (
               <LeaderboardPage
                 leaderboard={leaderboard}
-                onNavigate={navigateTo}
-              />
-            )}
-
-            {activePage === 'news' && (
-              <NewsPage
-                newsArticles={newsArticles}
-                roles={roles}
-                content={settings.newsContent}
+                tiers={tiers}
                 onNavigate={navigateTo}
               />
             )}
@@ -221,6 +220,7 @@ export default function App() {
               currentUser?.isAdmin ? (
                 <AdminDashboardPage
                   user={currentUser}
+                  tiers={tiers}
                   onRefreshPublicData={fetchPublicData}
                   onNavigate={navigateTo}
                 />

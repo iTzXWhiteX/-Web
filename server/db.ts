@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pg from 'pg';
 import {
   type UserProfile,
   type TestServer,
   type LeaderboardPlayer,
   type WebsiteSettings,
   type PublicLeaderboardItem,
+  type TierDefinition,
   WHITE_KINGDOM_TIERS,
   type NewsArticle,
   type ServerRole,
@@ -16,6 +18,8 @@ import {
   getTierRank,
   formatPublicLeaderboard,
 } from '../src/utils/pvpLogic.ts';
+
+const { Pool } = pg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +34,7 @@ export interface DatabaseSchema {
   leaderboard: LeaderboardPlayer[];
   newsArticles: NewsArticle[];
   roles: ServerRole[];
+  tiers: TierDefinition[];
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -101,22 +106,22 @@ const DEFAULT_ROLES: ServerRole[] = [
     showInList: true,
   },
   {
-    id: 'role_ht1',
-    name: 'Tier 1 Apex',
+    id: 'role_champion',
+    name: 'Kingdom Champion',
     color: '#f59e0b',
     emoji: '🏆',
     order: 3,
-    description: 'حملة تصنيف HT1 النخبوي وأعلى رتبة تنافسية.',
-    criteria: 'تُمنح للمقاتلين الذين يجتازون اختبار المستويات بمستوى استثنائي (High Tier 1) ويثبتون جدارتهم في المبارزات المعتمدة.',
+    description: 'أبطال بطولات ومنافسات السيرفر الرسمية.',
+    criteria: 'تُمنح للاعبين الفائزين بالمراكز الأولى في بطولات السيرفر والمصنفين كـ HT1.',
     showInList: true,
   },
   {
     id: 'role_gladiator',
-    name: 'Gladiator',
-    color: '#a855f7',
-    emoji: '🛡️',
+    name: 'Tier Fighter',
+    color: '#10b981',
+    emoji: '💎',
     order: 4,
-    description: 'مقاتلو السيرفر المعتمدين والمشاركين بالبطولات.',
+    description: 'المقاتلون الحاصلون على تقييم مستوى داخل السيرفر.',
     criteria: 'تُمنح لجميع المقاتلين الذين أتموا اختبار المستوى الأولي أو شاركوا في بطولات وتحديات السيرفر.',
     showInList: true,
   },
@@ -250,12 +255,184 @@ const DEFAULT_LEADERBOARD: LeaderboardPlayer[] = [
 
 class DatabaseManager {
   private data: DatabaseSchema;
+  private pool: pg.Pool | null = null;
+  private isInitialized = false;
 
   constructor() {
-    this.data = this.loadDatabase();
+    this.data = this.loadDatabaseFromFile();
   }
 
-  private loadDatabase(): DatabaseSchema {
+  /**
+   * Initializes PostgreSQL connection, auto-creates the storage table,
+   * loads persistent state (if existing data is found), or migrates local JSON data on first run.
+   */
+  public async init(): Promise<void> {
+    if (this.isInitialized) return;
+
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      console.warn('[Database] DATABASE_URL is not configured. Falling back to persistent local JSON file storage.');
+      this.isInitialized = true;
+      return;
+    }
+
+    try {
+      console.log('[Database] Connecting to PostgreSQL database on EthioDeploy...');
+      const isLocalhost = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
+
+      this.pool = new Pool({
+        connectionString,
+        ssl: isLocalhost ? false : { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10000,
+        max: 10,
+      });
+
+      const client = await this.pool.connect();
+      try {
+        // 1. Create table automatically if not exists
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS white_kingdom_storage (
+            key VARCHAR(64) PRIMARY KEY,
+            data JSONB NOT NULL,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `);
+
+        // 2. Check if persistent data already exists in PostgreSQL
+        const res = await client.query(
+          `SELECT data FROM white_kingdom_storage WHERE key = 'white_kingdom_db' LIMIT 1;`
+        );
+
+        if (res.rows.length > 0 && res.rows[0].data) {
+          // Never overwrite existing PostgreSQL data with default data!
+          console.log('[Database] Existing PostgreSQL data found. Loading into memory...');
+          this.data = this.sanitizeSchema(res.rows[0].data);
+          // Keep local backup file synchronized
+          this.saveDatabaseSync(this.data);
+          console.log('[Database] Persistent state successfully loaded from PostgreSQL.');
+        } else {
+          // On first initialization only, migrate existing JSON data into PostgreSQL if empty
+          console.log('[Database] PostgreSQL storage is empty. Migrating existing JSON data into PostgreSQL...');
+          const currentData = this.data;
+          await client.query(
+            `INSERT INTO white_kingdom_storage (key, data, updated_at)
+             VALUES ('white_kingdom_db', $1, NOW())
+             ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();`,
+            [JSON.stringify(currentData)]
+          );
+          console.log('[Database] Migration of existing JSON data into PostgreSQL completed successfully.');
+        }
+
+        this.isInitialized = true;
+      } finally {
+        client.release();
+      }
+    } catch (err: any) {
+      console.error('[Database] PostgreSQL connection/initialization error:', err?.message || err);
+      console.warn('[Database] Continuing with local JSON file storage to prevent server downtime.');
+    }
+  }
+
+  /**
+   * Persists current application state to PostgreSQL and local JSON backup file.
+   * Throws if PostgreSQL query fails so caller knows if database write succeeded.
+   */
+  public async save(): Promise<void> {
+    // 1. Always keep local JSON file backup in sync
+    this.saveDatabaseSync(this.data);
+
+    // 2. Persist to PostgreSQL if pool is available
+    if (this.pool) {
+      try {
+        await this.pool.query(
+          `INSERT INTO white_kingdom_storage (key, data, updated_at)
+           VALUES ('white_kingdom_db', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();`,
+          [JSON.stringify(this.data)]
+        );
+      } catch (err: any) {
+        console.error('[Database] Failed to save state to PostgreSQL:', err?.message || err);
+        throw new Error(`Database persistence failure: ${err?.message || 'PostgreSQL write error'}`);
+      }
+    }
+  }
+
+  private sanitizeSchema(parsed: any): DatabaseSchema {
+    const settings: WebsiteSettings = {
+      serverName: parsed?.settings?.serverName || DEFAULT_SETTINGS.serverName,
+      logoUrl: parsed?.settings?.logoUrl || DEFAULT_SETTINGS.logoUrl,
+      youtubeUrl: parsed?.settings?.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
+      discordInviteUrl: parsed?.settings?.discordInviteUrl || DEFAULT_SETTINGS.discordInviteUrl,
+      ownerDiscordId: parsed?.settings?.ownerDiscordId || DEFAULT_SETTINGS.ownerDiscordId,
+      ownerName: parsed?.settings?.ownerName || DEFAULT_SETTINGS.ownerName,
+      ownerAvatar: parsed?.settings?.ownerAvatar || DEFAULT_SETTINGS.ownerAvatar,
+      ownerTag: parsed?.settings?.ownerTag || DEFAULT_SETTINGS.ownerTag,
+      aboutContent: parsed?.settings?.aboutContent || DEFAULT_SETTINGS.aboutContent,
+      tierTestContent: parsed?.settings?.tierTestContent || DEFAULT_SETTINGS.tierTestContent,
+      newsContent: parsed?.settings?.newsContent || DEFAULT_SETTINGS.newsContent,
+      welcomeBadgeText: parsed?.settings?.welcomeBadgeText || DEFAULT_SETTINGS.welcomeBadgeText,
+    };
+
+    const testServers: TestServer[] = Array.isArray(parsed?.testServers) && parsed.testServers.length > 0
+      ? parsed.testServers
+      : DEFAULT_SERVERS;
+
+    let leaderboard: LeaderboardPlayer[] = Array.isArray(parsed?.leaderboard) && parsed.leaderboard.length > 0
+      ? parsed.leaderboard
+      : [];
+
+    const newsArticles: NewsArticle[] = Array.isArray(parsed?.newsArticles) && parsed.newsArticles.length > 0
+      ? parsed.newsArticles
+      : DEFAULT_NEWS;
+
+    const roles: ServerRole[] = Array.isArray(parsed?.roles) && parsed.roles.length > 0
+      ? parsed.roles
+      : DEFAULT_ROLES;
+
+    const tiers: TierDefinition[] = Array.isArray(parsed?.tiers) && parsed.tiers.length > 0
+      ? parsed.tiers
+      : WHITE_KINGDOM_TIERS;
+
+    // Migrate old tierTests if leaderboard empty
+    if (leaderboard.length === 0 && parsed?.tierTests) {
+      const testRecords = Object.values(parsed.tierTests) as any[];
+      const seen = new Set<string>();
+      for (const test of testRecords) {
+        if (!seen.has(test.discordId)) {
+          seen.add(test.discordId);
+          const user = (parsed.users && parsed.users[test.discordId]) || null;
+          leaderboard.push({
+            id: `lead_${test.id || Date.now()}`,
+            minecraftName: test.minecraftName || `Gladiator_${test.discordId.slice(-4)}`,
+            discordId: test.discordId,
+            discordDisplayName: user?.username || user?.globalName || `Discord_${test.discordId.slice(-4)}`,
+            discordAvatar: resolveDiscordAvatar(test.discordId, user?.avatar),
+            tierName: test.tier || 'HT1',
+            tierRank: test.tierRank || getTierRank(test.tier || 'HT1', tiers),
+            createdAt: test.createdAt || new Date().toISOString(),
+            updatedAt: test.updatedAt || new Date().toISOString(),
+          });
+        }
+      }
+    }
+
+    if (leaderboard.length === 0) {
+      leaderboard = DEFAULT_LEADERBOARD;
+    }
+
+    return {
+      users: parsed?.users || DEFAULT_USERS,
+      adminDiscordIds: parsed?.adminDiscordIds || ['1324725244073873539', '184719284719284719'],
+      settings,
+      testServers,
+      leaderboard,
+      newsArticles,
+      roles,
+      tiers,
+    };
+  }
+
+  private loadDatabaseFromFile(): DatabaseSchema {
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -264,75 +441,7 @@ class DatabaseManager {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(raw);
-
-        // Migrate / populate simplified schema fields
-        const settings: WebsiteSettings = {
-          serverName: parsed.settings?.serverName || DEFAULT_SETTINGS.serverName,
-          logoUrl: parsed.settings?.logoUrl || DEFAULT_SETTINGS.logoUrl,
-          youtubeUrl: parsed.settings?.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
-          discordInviteUrl: parsed.settings?.discordInviteUrl || DEFAULT_SETTINGS.discordInviteUrl,
-          ownerDiscordId: parsed.settings?.ownerDiscordId || DEFAULT_SETTINGS.ownerDiscordId,
-          ownerName: parsed.settings?.ownerName || DEFAULT_SETTINGS.ownerName,
-          ownerAvatar: parsed.settings?.ownerAvatar || DEFAULT_SETTINGS.ownerAvatar,
-          ownerTag: parsed.settings?.ownerTag || DEFAULT_SETTINGS.ownerTag,
-          aboutContent: parsed.settings?.aboutContent || DEFAULT_SETTINGS.aboutContent,
-          tierTestContent: parsed.settings?.tierTestContent || DEFAULT_SETTINGS.tierTestContent,
-          newsContent: parsed.settings?.newsContent || DEFAULT_SETTINGS.newsContent,
-          welcomeBadgeText: parsed.settings?.welcomeBadgeText || DEFAULT_SETTINGS.welcomeBadgeText,
-        };
-
-        const testServers: TestServer[] = Array.isArray(parsed.testServers) && parsed.testServers.length > 0
-          ? parsed.testServers
-          : DEFAULT_SERVERS;
-
-        let leaderboard: LeaderboardPlayer[] = Array.isArray(parsed.leaderboard) && parsed.leaderboard.length > 0
-          ? parsed.leaderboard
-          : [];
-
-        const newsArticles: NewsArticle[] = Array.isArray(parsed.newsArticles) && parsed.newsArticles.length > 0
-          ? parsed.newsArticles
-          : DEFAULT_NEWS;
-
-        const roles: ServerRole[] = Array.isArray(parsed.roles) && parsed.roles.length > 0
-          ? parsed.roles
-          : DEFAULT_ROLES;
-
-        // If leaderboard is empty but old tierTests existed, migrate them cleanly
-        if (leaderboard.length === 0 && parsed.tierTests) {
-          const testRecords = Object.values(parsed.tierTests) as any[];
-          const seen = new Set<string>();
-          for (const test of testRecords) {
-            if (!seen.has(test.discordId)) {
-              seen.add(test.discordId);
-              const user = (parsed.users && parsed.users[test.discordId]) || null;
-              leaderboard.push({
-                id: `lead_${test.id || Date.now()}`,
-                minecraftName: test.minecraftName || `Gladiator_${test.discordId.slice(-4)}`,
-                discordId: test.discordId,
-                discordDisplayName: user?.username || user?.globalName || `Discord_${test.discordId.slice(-4)}`,
-                discordAvatar: resolveDiscordAvatar(test.discordId, user?.avatar),
-                tierName: test.tier || 'HT1',
-                tierRank: test.tierRank || getTierRank(test.tier || 'HT1'),
-                createdAt: test.createdAt || new Date().toISOString(),
-                updatedAt: test.updatedAt || new Date().toISOString(),
-              });
-            }
-          }
-        }
-
-        if (leaderboard.length === 0) {
-          leaderboard = DEFAULT_LEADERBOARD;
-        }
-
-        return {
-          users: parsed.users || DEFAULT_USERS,
-          adminDiscordIds: parsed.adminDiscordIds || ['184719284719284719'],
-          settings,
-          testServers,
-          leaderboard,
-          newsArticles,
-          roles,
-        };
+        return this.sanitizeSchema(parsed);
       }
     } catch (err) {
       console.error('Failed to load database file, using defaults:', err);
@@ -346,6 +455,7 @@ class DatabaseManager {
       leaderboard: DEFAULT_LEADERBOARD,
       newsArticles: DEFAULT_NEWS,
       roles: DEFAULT_ROLES,
+      tiers: WHITE_KINGDOM_TIERS,
     };
 
     this.saveDatabaseSync(initial);
@@ -361,12 +471,8 @@ class DatabaseManager {
       fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), 'utf-8');
       fs.renameSync(tmpFile, DB_FILE);
     } catch (err) {
-      console.error('Error writing to database:', err);
+      console.error('Error writing to database backup file:', err);
     }
-  }
-
-  public save(): void {
-    this.saveDatabaseSync(this.data);
   }
 
   // --- Settings ---
@@ -374,12 +480,12 @@ class DatabaseManager {
     return this.data.settings;
   }
 
-  public updateSettings(partial: Partial<WebsiteSettings>): WebsiteSettings {
+  public async updateSettings(partial: Partial<WebsiteSettings>): Promise<WebsiteSettings> {
     this.data.settings = {
       ...this.data.settings,
       ...partial,
     };
-    this.save();
+    await this.save();
     return this.data.settings;
   }
 
@@ -388,7 +494,7 @@ class DatabaseManager {
     return [...this.data.testServers].sort((a, b) => a.order - b.order);
   }
 
-  public addTestServer(server: Omit<TestServer, 'id'>): TestServer {
+  public async addTestServer(server: Omit<TestServer, 'id'>): Promise<TestServer> {
     const id = `srv_${Date.now()}`;
     const newServer: TestServer = {
       ...server,
@@ -396,11 +502,11 @@ class DatabaseManager {
       order: server.order ?? (this.data.testServers.length + 1),
     };
     this.data.testServers.push(newServer);
-    this.save();
+    await this.save();
     return newServer;
   }
 
-  public updateTestServer(id: string, updates: Partial<TestServer>): TestServer | null {
+  public async updateTestServer(id: string, updates: Partial<TestServer>): Promise<TestServer | null> {
     const idx = this.data.testServers.findIndex(s => s.id === id);
     if (idx === -1) return null;
     this.data.testServers[idx] = {
@@ -408,15 +514,15 @@ class DatabaseManager {
       ...updates,
       id,
     };
-    this.save();
+    await this.save();
     return this.data.testServers[idx];
   }
 
-  public deleteTestServer(id: string): boolean {
+  public async deleteTestServer(id: string): Promise<boolean> {
     const initialLen = this.data.testServers.length;
     this.data.testServers = this.data.testServers.filter(s => s.id !== id);
     if (this.data.testServers.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
@@ -428,10 +534,82 @@ class DatabaseManager {
   }
 
   public getLeaderboardPublic(): PublicLeaderboardItem[] {
-    return formatPublicLeaderboard(this.data.leaderboard);
+    return formatPublicLeaderboard(this.data.leaderboard, this.data.tiers);
   }
 
-  public addLeaderboardPlayer(player: {
+  // --- Tiers Management ---
+  public getTiers(): TierDefinition[] {
+    return [...this.data.tiers].sort((a, b) => b.rank - a.rank);
+  }
+
+  public async addTier(tier: { name: string; color: string; label?: string; rank?: number }): Promise<TierDefinition> {
+    const cleanName = tier.name.trim().toUpperCase();
+    const existingIdx = this.data.tiers.findIndex(t => t.name.toUpperCase() === cleanName);
+    const calculatedRank = tier.rank !== undefined ? tier.rank : getTierRank(cleanName, this.data.tiers);
+    const newTier: TierDefinition = {
+      name: cleanName,
+      color: tier.color.trim() || '#38bdf8',
+      label: tier.label?.trim() || cleanName,
+      rank: calculatedRank > 0 ? calculatedRank : (this.data.tiers.length ? Math.min(...this.data.tiers.map(t => t.rank)) - 1 : 1),
+    };
+
+    if (existingIdx !== -1) {
+      this.data.tiers[existingIdx] = newTier;
+    } else {
+      this.data.tiers.push(newTier);
+    }
+    await this.save();
+    return newTier;
+  }
+
+  public async updateTier(name: string, updates: Partial<TierDefinition>): Promise<TierDefinition | null> {
+    const cleanName = name.trim().toUpperCase();
+    const idx = this.data.tiers.findIndex(t => t.name.toUpperCase() === cleanName);
+    if (idx === -1) return null;
+
+    const existing = this.data.tiers[idx];
+    const newName = updates.name ? updates.name.trim().toUpperCase() : existing.name;
+    const newColor = updates.color ? updates.color.trim() : existing.color;
+    const newLabel = updates.label !== undefined ? updates.label.trim() : existing.label;
+    const newRank = updates.rank !== undefined ? updates.rank : existing.rank;
+
+    this.data.tiers[idx] = {
+      name: newName,
+      color: newColor,
+      label: newLabel,
+      rank: newRank,
+    };
+
+    // If tier name or rank changed, keep leaderboard players synchronized
+    for (const p of this.data.leaderboard) {
+      if (p.tierName.toUpperCase() === cleanName) {
+        if (newName !== cleanName) p.tierName = newName;
+        p.tierRank = newRank;
+      }
+    }
+
+    await this.save();
+    return this.data.tiers[idx];
+  }
+
+  public async deleteTier(name: string): Promise<boolean> {
+    const cleanName = name.trim().toUpperCase();
+    const initialLen = this.data.tiers.length;
+    this.data.tiers = this.data.tiers.filter(t => t.name.toUpperCase() !== cleanName);
+    if (this.data.tiers.length !== initialLen) {
+      await this.save();
+      return true;
+    }
+    return false;
+  }
+
+  public async resetTiers(): Promise<TierDefinition[]> {
+    this.data.tiers = [...WHITE_KINGDOM_TIERS];
+    await this.save();
+    return this.getTiers();
+  }
+
+  public async addLeaderboardPlayer(player: {
     minecraftName: string;
     discordId: string;
     discordDisplayName?: string;
@@ -440,11 +618,11 @@ class DatabaseManager {
     tierName: string;
     gamesPlayed?: any[];
     notes?: string;
-  }): LeaderboardPlayer {
+  }): Promise<LeaderboardPlayer> {
     const id = `player_${Date.now()}`;
     const user = this.data.users[player.discordId];
     const tierName = player.tierName.trim().toUpperCase() || 'HT1';
-    const tierRank = getTierRank(tierName);
+    const tierRank = getTierRank(tierName, this.data.tiers);
     const resolvedAvatar = player.discordAvatar || (user?.avatar) || resolveDiscordAvatar(player.discordId);
     const resolvedName = player.discordDisplayName || (user?.globalName || user?.username) || `Discord_${player.discordId.slice(-4)}`;
     const resolvedUsername = player.discordUsername || user?.username || undefined;
@@ -465,17 +643,17 @@ class DatabaseManager {
     };
 
     this.data.leaderboard.push(newPlayer);
-    this.save();
+    await this.save();
     return newPlayer;
   }
 
-  public updateLeaderboardPlayer(id: string, updates: Partial<LeaderboardPlayer>): LeaderboardPlayer | null {
+  public async updateLeaderboardPlayer(id: string, updates: Partial<LeaderboardPlayer>): Promise<LeaderboardPlayer | null> {
     const idx = this.data.leaderboard.findIndex(p => p.id === id);
     if (idx === -1) return null;
 
     const existing = this.data.leaderboard[idx];
     const tierName = (updates.tierName || existing.tierName).trim().toUpperCase();
-    const tierRank = updates.tierRank || getTierRank(tierName);
+    const tierRank = updates.tierRank || getTierRank(tierName, this.data.tiers);
 
     this.data.leaderboard[idx] = {
       ...existing,
@@ -488,11 +666,11 @@ class DatabaseManager {
       updatedAt: new Date().toISOString(),
     };
 
-    this.save();
+    await this.save();
     return this.data.leaderboard[idx];
   }
 
-  public deleteLeaderboardPlayer(id: string): boolean {
+  public async deleteLeaderboardPlayer(id: string): Promise<boolean> {
     const player = this.data.leaderboard.find(p => p.id === id);
     const initialLen = this.data.leaderboard.length;
     this.data.leaderboard = this.data.leaderboard.filter(p => p.id !== id);
@@ -508,7 +686,7 @@ class DatabaseManager {
     }
 
     if (this.data.leaderboard.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
@@ -523,7 +701,7 @@ class DatabaseManager {
     return Object.values(this.data.users);
   }
 
-  public upsertUser(profile: Partial<UserProfile> & { discordId: string }): UserProfile {
+  private applyUpsertUser(profile: Partial<UserProfile> & { discordId: string }): UserProfile {
     const existing = this.data.users[profile.discordId];
     const isAdmin = this.isAdmin(profile.discordId);
 
@@ -551,7 +729,20 @@ class DatabaseManager {
       }
     }
 
-    this.save();
+    return updated;
+  }
+
+  public async upsertUser(profile: Partial<UserProfile> & { discordId: string }): Promise<UserProfile> {
+    const updated = this.applyUpsertUser(profile);
+    await this.save();
+    return updated;
+  }
+
+  public upsertUserSync(profile: Partial<UserProfile> & { discordId: string }): UserProfile {
+    const updated = this.applyUpsertUser(profile);
+    this.save().catch(err => {
+      console.error('[Database] Background save error on upsertUserSync:', err);
+    });
     return updated;
   }
 
@@ -573,7 +764,7 @@ class DatabaseManager {
     return !!this.data.users[cleanId]?.isAdmin;
   }
 
-  public setAdminStatus(discordId: string, status: boolean): void {
+  public async setAdminStatus(discordId: string, status: boolean): Promise<void> {
     if (status) {
       if (!this.data.adminDiscordIds.includes(discordId)) {
         this.data.adminDiscordIds.push(discordId);
@@ -584,7 +775,7 @@ class DatabaseManager {
     if (this.data.users[discordId]) {
       this.data.users[discordId].isAdmin = status;
     }
-    this.save();
+    await this.save();
   }
 
   // --- Server Roles (for Discord-like role mentions & badges) ---
@@ -592,7 +783,7 @@ class DatabaseManager {
     return [...this.data.roles].sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 
-  public addRole(role: Omit<ServerRole, 'id'>): ServerRole {
+  public async addRole(role: Omit<ServerRole, 'id'>): Promise<ServerRole> {
     const id = `role_${Date.now()}`;
     const newRole: ServerRole = {
       ...role,
@@ -606,11 +797,11 @@ class DatabaseManager {
       showInList: role.showInList !== false,
     };
     this.data.roles.push(newRole);
-    this.save();
+    await this.save();
     return newRole;
   }
 
-  public updateRole(id: string, updates: Partial<ServerRole>): ServerRole | null {
+  public async updateRole(id: string, updates: Partial<ServerRole>): Promise<ServerRole | null> {
     const idx = this.data.roles.findIndex(r => r.id === id);
     if (idx === -1) return null;
     this.data.roles[idx] = {
@@ -618,15 +809,15 @@ class DatabaseManager {
       ...updates,
       id,
     };
-    this.save();
+    await this.save();
     return this.data.roles[idx];
   }
 
-  public deleteRole(id: string): boolean {
+  public async deleteRole(id: string): Promise<boolean> {
     const initialLen = this.data.roles.length;
     this.data.roles = this.data.roles.filter(r => r.id !== id);
     if (this.data.roles.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
@@ -641,13 +832,13 @@ class DatabaseManager {
     });
   }
 
-  public addNewsArticle(article: {
+  public async addNewsArticle(article: {
     title: string;
     content: string;
     category?: string;
     imageUrl?: string;
     pinned?: boolean;
-  }): NewsArticle {
+  }): Promise<NewsArticle> {
     const id = `news_${Date.now()}`;
     const newArticle: NewsArticle = {
       id,
@@ -660,11 +851,11 @@ class DatabaseManager {
       updatedAt: new Date().toISOString(),
     };
     this.data.newsArticles.unshift(newArticle);
-    this.save();
+    await this.save();
     return newArticle;
   }
 
-  public updateNewsArticle(id: string, updates: Partial<NewsArticle>): NewsArticle | null {
+  public async updateNewsArticle(id: string, updates: Partial<NewsArticle>): Promise<NewsArticle | null> {
     const idx = this.data.newsArticles.findIndex(a => a.id === id);
     if (idx === -1) return null;
     this.data.newsArticles[idx] = {
@@ -673,18 +864,25 @@ class DatabaseManager {
       id,
       updatedAt: new Date().toISOString(),
     };
-    this.save();
+    await this.save();
     return this.data.newsArticles[idx];
   }
 
-  public deleteNewsArticle(id: string): boolean {
+  public async deleteNewsArticle(id: string): Promise<boolean> {
     const initialLen = this.data.newsArticles.length;
     this.data.newsArticles = this.data.newsArticles.filter(a => a.id !== id);
     if (this.data.newsArticles.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
+  }
+
+  public async close(): Promise<void> {
+    if (this.pool) {
+      await this.pool.end();
+      this.pool = null;
+    }
   }
 }
 

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Trophy, X, Swords, FileText, CheckCircle2 } from 'lucide-react';
-import { PublicLeaderboardItem, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
+import { PublicLeaderboardItem, TierDefinition, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
 
 interface LeaderboardPageProps {
   leaderboard: PublicLeaderboardItem[];
+  tiers?: TierDefinition[];
   onNavigate: (page: string) => void;
 }
 
 export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
   leaderboard,
+  tiers,
   onNavigate,
 }) => {
   const [selectedPlayer, setSelectedPlayer] = useState<PublicLeaderboardItem | null>(null);
@@ -19,14 +21,23 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
     return () => clearTimeout(timer);
   }, []);
 
+  const activeTiers = tiers && tiers.length > 0 ? tiers : WHITE_KINGDOM_TIERS;
   const getTierInfo = (tierName: string) => {
-    return WHITE_KINGDOM_TIERS.find(t => t.name.toLowerCase() === tierName.toLowerCase()) || {
-      name: tierName,
-      label: tierName,
+    const clean = (tierName || '').trim().toLowerCase();
+    const found = activeTiers.find(t => t.name.toLowerCase() === clean);
+    if (found) {
+      return {
+        name: found.name,
+        label: found.label || found.name,
+        rank: found.rank,
+        color: found.color || '#00e5ff',
+      };
+    }
+    return {
+      name: tierName || 'HT1',
+      label: tierName || 'HT1',
       rank: 5,
       color: '#00e5ff',
-      badgeBg: 'bg-cyan-500/20',
-      badgeBorder: 'border-cyan-400/60',
     };
   };
 
@@ -132,19 +143,36 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                           (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
                         }}
                       />
-                      <span className="text-sm font-medium text-slate-200 truncate">
-                        {player.discordDisplayName}
-                      </span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-semibold text-slate-100 truncate">
+                          {player.discordDisplayName}
+                        </span>
+                        {player.discordUsername && (
+                          <span className="text-[11px] font-mono text-cyan-400/80 truncate" dir="ltr">
+                            @{player.discordUsername}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* 3. Tier Rating Badge (Required: خلي تقييم اللاعب الي هو الtier كام يظهر) */}
                     <div className="flex items-center justify-start sm:justify-end gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold border shadow-sm ${
-                          tierInfo.badgeBg || 'bg-cyan-500/20'
-                        } ${tierInfo.badgeBorder || 'border-cyan-400/60'} text-white`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold border transition-all"
+                        style={{
+                          backgroundColor: `${tierInfo.color}25`,
+                          borderColor: `${tierInfo.color}70`,
+                          color: '#ffffff',
+                          boxShadow: `0 0 12px ${tierInfo.color}25`,
+                        }}
                       >
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tierInfo.color || '#00e5ff' }} />
+                        <span
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{
+                            backgroundColor: tierInfo.color,
+                            boxShadow: `0 0 8px ${tierInfo.color}`,
+                          }}
+                        />
                         <span>{player.tierName}</span>
                       </span>
                     </div>
@@ -197,22 +225,45 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                 </h3>
                 <div className="text-xs text-slate-300">
                   حساب ديسكورد: <span className="font-semibold text-white">{selectedPlayer.discordDisplayName}</span>
+                  {selectedPlayer.discordUsername && (
+                    <span className="text-cyan-400 font-mono mr-1.5" dir="ltr">(@{selectedPlayer.discordUsername})</span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Tier Achievement Badge */}
-            <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="text-[11px] font-mono text-cyan-300">المستوى المعتمد (Achieved Tier)</div>
-                <div className="text-lg font-bold text-white">
-                  {getTierInfo(selectedPlayer.tierName).label || selectedPlayer.tierName}
+            {(() => {
+              const tierInfo = getTierInfo(selectedPlayer.tierName);
+              return (
+                <div
+                  className="p-4 rounded-2xl border flex items-center justify-between"
+                  style={{
+                    backgroundColor: `${tierInfo.color}15`,
+                    borderColor: `${tierInfo.color}50`,
+                  }}
+                >
+                  <div className="space-y-0.5">
+                    <div className="text-[11px] font-mono" style={{ color: tierInfo.color }}>
+                      المستوى المعتمد (Achieved Tier)
+                    </div>
+                    <div className="text-lg font-bold text-white">
+                      {tierInfo.label || selectedPlayer.tierName}
+                    </div>
+                  </div>
+                  <span
+                    className="px-4 py-2 rounded-xl font-mono text-sm font-extrabold shadow-lg flex items-center gap-2"
+                    style={{
+                      backgroundColor: tierInfo.color,
+                      color: '#000000',
+                      boxShadow: `0 0 20px ${tierInfo.color}60`,
+                    }}
+                  >
+                    <span>{selectedPlayer.tierName}</span>
+                  </span>
                 </div>
-              </div>
-              <span className="px-3.5 py-1.5 rounded-xl font-mono text-sm font-extrabold bg-cyan-500 text-black shadow-md">
-                {selectedPlayer.tierName}
-              </span>
-            </div>
+              );
+            })()}
 
             {/* Games Played / Tested Disciplines (هو لعب ايه) */}
             <div className="space-y-3">

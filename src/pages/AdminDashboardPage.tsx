@@ -24,12 +24,15 @@ import {
   AtSign,
   ExternalLink,
   HelpCircle,
+  Award,
+  RefreshCw,
 } from 'lucide-react';
 import {
   UserProfile,
   WebsiteSettings,
   TestServer,
   LeaderboardPlayer,
+  TierDefinition,
   WHITE_KINGDOM_TIERS,
   GameDiscipline,
   NewsArticle,
@@ -40,16 +43,20 @@ import { ImageUploadInput } from '../components/ImageUploadInput.js';
 
 interface AdminDashboardPageProps {
   user: UserProfile;
+  tiers?: TierDefinition[];
   onRefreshPublicData: () => void;
   onNavigate: (page: string) => void;
 }
 
+const EMOJI_PRESETS = ['👑', '🛡️', '⚔️', '⭐', '🔥', '💎', '🎮', '⚡', '🏆', '🎯', '🌟', '⚜️'];
+
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   user,
+  tiers,
   onRefreshPublicData,
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<'settings' | 'about' | 'tierTest' | 'news' | 'roles' | 'servers' | 'leaderboard'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'about' | 'tierTest' | 'tiers' | 'news' | 'roles' | 'servers' | 'leaderboard'>('settings');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -120,21 +127,32 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   ]);
   const [lookingUpDiscord, setLookingUpDiscord] = useState(false);
 
-  // Color Presets for Discord Roles
+  // Color Presets for Discord Roles and Tiers
   const COLOR_PRESETS = [
-    { label: 'Cyan', color: '#00e5ff' },
-    { label: 'Sky', color: '#38bdf8' },
-    { label: 'Blue', color: '#3b82f6' },
-    { label: 'Purple', color: '#a855f7' },
-    { label: 'Pink', color: '#ec4899' },
-    { label: 'Red', color: '#ef4444' },
-    { label: 'Orange', color: '#f97316' },
-    { label: 'Amber/Gold', color: '#f59e0b' },
-    { label: 'Emerald', color: '#10b981' },
-    { label: 'White', color: '#f8fafc' },
+    { label: 'Red / أحمر', color: '#ef4444' },
+    { label: 'Orange / برتقالي', color: '#f97316' },
+    { label: 'Amber/Gold / ذهبي', color: '#f59e0b' },
+    { label: 'Emerald / أخضر', color: '#10b981' },
+    { label: 'Cyan / سماوي مشع', color: '#00e5ff' },
+    { label: 'Sky / أزرق فاتح', color: '#38bdf8' },
+    { label: 'Blue / أزرق ملكي', color: '#3b82f6' },
+    { label: 'Purple / بنفسجي', color: '#a855f7' },
+    { label: 'Pink / وردي', color: '#ec4899' },
+    { label: 'Rose / قرمزي', color: '#f43f5e' },
+    { label: 'White / أبيض ناصع', color: '#f8fafc' },
   ];
 
-  const EMOJI_PRESETS = ['👑', '⚔️', '🛡️', '💎', '🔥', '⚡', '🏆', '🎯', '🌟', '🎮'];
+  // Custom Tiers State
+  const [tiersList, setTiersList] = useState<TierDefinition[]>(tiers && tiers.length > 0 ? tiers : WHITE_KINGDOM_TIERS);
+  const [newTierName, setNewTierName] = useState('');
+  const [newTierColor, setNewTierColor] = useState('#ef4444');
+  const [newTierLabel, setNewTierLabel] = useState('');
+  const [newTierRank, setNewTierRank] = useState<number | ''>('');
+  const [editingTier, setEditingTier] = useState<TierDefinition | null>(null);
+
+  // Additional player username state
+  const [playerDiscordUsername, setPlayerDiscordUsername] = useState('');
+  const lookupDebounceRef = useRef<any>(null);
 
   // Helper to attach authorization header if present in localStorage (avoids iframe third-party cookie restrictions)
   const getAuthHeaders = useCallback((extraHeaders?: Record<string, string>) => {
@@ -149,7 +167,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // In-App Delete Confirmation Modal state (bypasses window.confirm which is blocked by iframe sandboxes)
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
-    type: 'role' | 'player' | 'server' | 'news';
+    type: 'role' | 'player' | 'server' | 'news' | 'tier';
     id: string;
     title: string;
     message: string;
@@ -169,6 +187,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         if (data.leaderboard) setLeaderboard(data.leaderboard);
         if (data.newsArticles) setNewsArticles(data.newsArticles);
         if (data.roles) setRoles(data.roles);
+        if (data.tiers) setTiersList(data.tiers);
       } else {
         setStatusMessage({ text: 'فشل تحميل بيانات لوحة الإدارة.', type: 'error' });
       }
@@ -553,34 +572,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     setPlayerDiscordId(val);
     const clean = val.trim();
     if (/^\d{17,20}$/.test(clean)) {
-      if (!playerDiscordAvatar) {
-        try {
-          const idx = (BigInt(clean) >> 22n) % 6n;
-          setPlayerDiscordAvatar(`https://cdn.discordapp.com/embed/avatars/${idx}.png`);
-        } catch (_) {}
-      }
-      if (!playerDiscordName) {
-        setPlayerDiscordName(`Player_${clean.slice(-4)}`);
-      }
+      if (lookupDebounceRef.current) clearTimeout(lookupDebounceRef.current);
+      lookupDebounceRef.current = setTimeout(() => {
+        handleLookupDiscord(clean);
+      }, 400);
     }
   };
 
-  const handleLookupDiscord = async () => {
-    if (!playerDiscordId.trim()) {
+  const handleLookupDiscord = async (idParam?: string) => {
+    const id = (idParam || playerDiscordId).trim();
+    if (!id) {
       showNotification('يرجى إدخال معرّف ديسكورد (Discord User ID).', 'error');
       return;
     }
 
     try {
       setLookingUpDiscord(true);
-      const res = await fetch(`/api/admin/discord-lookup/${playerDiscordId.trim()}`, {
+      const res = await fetch(`/api/admin/discord-lookup/${id}`, {
         headers: getAuthHeaders(),
       });
       if (res.ok) {
         const d = await res.json();
-        if (d.username) setPlayerDiscordName(d.username);
+        if (d.displayName || d.username) setPlayerDiscordName(d.displayName || d.username);
+        if (d.username) setPlayerDiscordUsername(d.username);
         if (d.avatar) setPlayerDiscordAvatar(d.avatar);
-        showNotification(`تم جلب حساب الديسكورد بنجاح (${d.source})`);
+        showNotification(`تم جلب بيانات الحساب: ${d.displayName || d.username} (@${d.username})`);
       } else {
         const err = await res.json();
         showNotification(err.error || 'فشل التحقق من حساب الديسكورد.', 'error');
@@ -589,6 +605,113 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       showNotification('خطأ في الاتصال أثناء التحقق من الديسكورد.', 'error');
     } finally {
       setLookingUpDiscord(false);
+    }
+  };
+
+  // --- 6. Custom Tiers Operations (Add, Change Color/Label/Rank, Delete, Reset) ---
+  const handleAddTier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTierName.trim()) {
+      showNotification('اسم المستوى مطلوب (مثال: LT6 أو HT6).', 'error');
+      return;
+    }
+    if (!newTierColor.trim()) {
+      showNotification('لون المستوى مطلوب.', 'error');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await fetch('/api/admin/tiers', {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          name: newTierName.trim().toUpperCase(),
+          color: newTierColor.trim(),
+          label: newTierLabel.trim() || undefined,
+          rank: typeof newTierRank === 'number' ? newTierRank : undefined,
+        }),
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+        setTiersList(d.tiers);
+        setNewTierName('');
+        setNewTierLabel('');
+        setNewTierRank('');
+        showNotification(d.message || 'تمت إضافة المستوى بنجاح!');
+        onRefreshPublicData();
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'فشل إضافة المستوى.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('حدث خطأ أثناء إضافة المستوى.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateTier = async (tier: TierDefinition) => {
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/admin/tiers/${encodeURIComponent(tier.name)}`, {
+        method: 'PUT',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(tier),
+      });
+
+      if (res.ok) {
+        const d = await res.json();
+        setTiersList(d.tiers);
+        setEditingTier(null);
+        showNotification(d.message || `تم تحديث لون ومستوى ${tier.name} بنجاح!`);
+        fetchAdminData();
+        onRefreshPublicData();
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'فشل تعديل المستوى.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('حدث خطأ أثناء تعديل المستوى.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTier = (name: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'tier',
+      id: name,
+      title: `المستوى ${name}`,
+      message: `هل أنت متأكد من رغبتك في حذف المستوى "${name}" نهائياً من تصنيفات السيرفر؟`,
+    });
+  };
+
+  const handleResetTiers = async () => {
+    try {
+      setSaving(true);
+      const res = await fetch('/api/admin/tiers/reset', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setTiersList(d.tiers);
+        showNotification(d.message || 'تمت استعادة التصنيفات الافتراضية بنجاح!');
+        fetchAdminData();
+        onRefreshPublicData();
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'فشل استعادة التصنيفات.', 'error');
+      }
+    } catch (err) {
+      showNotification('حدث خطأ أثناء استعادة التصنيفات.', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -607,7 +730,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     setPlayerGames(playerGames.filter((_, i) => i !== index));
   };
 
-  // 6. Leaderboard Player Management
+  // 7. Leaderboard Player Management
   const handleAddPlayer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!playerMinecraftName.trim()) {
@@ -629,6 +752,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           minecraftName: playerMinecraftName.trim(),
           discordId: playerDiscordId.trim(),
           discordDisplayName: playerDiscordName.trim() || undefined,
+          discordUsername: playerDiscordUsername.trim() || undefined,
           discordAvatar: playerDiscordAvatar.trim() || undefined,
           tierName: playerTier,
           gamesPlayed: cleanGames,
@@ -640,8 +764,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         setPlayerMinecraftName('');
         setPlayerDiscordId('');
         setPlayerDiscordName('');
+        setPlayerDiscordUsername('');
         setPlayerDiscordAvatar('');
-        setPlayerTier('HT1');
+        setPlayerTier(tiersList[0]?.name || 'HT1');
         setPlayerNotes('');
         setPlayerGames([
           { gameName: 'Netherite Pot (SMP)', score: '3 - 1', details: 'تحكم ممتاز في الشيلد وتوقيت التوتم' },
@@ -707,6 +832,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       else if (type === 'news') endpoint = `/api/admin/news/${id}`;
       else if (type === 'server') endpoint = `/api/admin/servers/${id}`;
       else if (type === 'player') endpoint = `/api/admin/leaderboard/${id}`;
+      else if (type === 'tier') endpoint = `/api/admin/tiers/${encodeURIComponent(id)}`;
 
       const res = await fetch(endpoint, {
         method: 'DELETE',
@@ -839,6 +965,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         >
           <FileText className="w-4 h-4" />
           <span>صفحة اختبار المستويات</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('tiers')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+            activeTab === 'tiers'
+              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Award className="w-4 h-4" />
+          <span>إدارة وتلوين المستويات Tiers ({tiersList.length})</span>
         </button>
 
         <button
@@ -1709,6 +1847,373 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         </div>
       )}
 
+      {/* Tab: Custom Tiers Management (Add, change color, custom rank, delete) */}
+      {activeTab === 'tiers' && (
+        <div className="space-y-8 text-right">
+          {/* Header & Reset Button */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 glass-panel rounded-3xl p-6 border border-cyan-500/25">
+            <div>
+              <div className="flex items-center gap-2 text-cyan-400 font-bold text-lg">
+                <Award className="w-5 h-5 text-cyan-400" />
+                <h2>إدارة وتخصيص مستويات وتصنيفات السيرفر (Tiers Management)</h2>
+              </div>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                أضف مستويات جديدة (مثل <span className="font-mono text-cyan-300">LT6</span> أو <span className="font-mono text-cyan-300">HT6</span> أو أسماء مخصصة)، غيّر لون أي مستوى (مثل جعل HT1 أحمر)، واحذف ما لا تحتاجه.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleResetTiers}
+              disabled={saving}
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-2 cursor-pointer transition-all flex-shrink-0"
+              title="استعادة التصنيفات الافتراضية الأصلية (HT1 إلى LT5)"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>استعادة المستويات الافتراضية</span>
+            </button>
+          </div>
+
+          {/* Form: Add New Tier */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/25 space-y-5">
+            <div className="border-b border-slate-800 pb-3">
+              <h3 className="font-heading font-bold text-lg text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-cyan-400" />
+                <span>إضافة مستوى وتصنيف جديد (Add New Tier)</span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                أدخل رمز المستوى (مثل LT6)، واختر لونه وتصنيفه ليظهر في قوائم الاختبار ولوحة الصدارة فوراً.
+              </p>
+            </div>
+
+            <form onSubmit={handleAddTier} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1">
+                    رمز المستوى (Tier Code / Name) *
+                  </label>
+                  <input
+                    type="text"
+                    value={newTierName}
+                    onChange={e => setNewTierName(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm uppercase focus:border-cyan-400 focus:outline-none"
+                    placeholder="مثال: LT6 أو HT6 أو PRO"
+                    required
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">يُكتب بحروف إنجليزية كبيرة</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1">
+                    الاسم المعروض / التوضيحي (Label)
+                  </label>
+                  <input
+                    type="text"
+                    value={newTierLabel}
+                    onChange={e => setNewTierLabel(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none"
+                    placeholder="مثال: Low Tier 6 أو الرتبة 6"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">يظهر بجانب الرمز في نافذة التفاصيل</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1">
+                    الترتيب الرقمي (Rank Number)
+                  </label>
+                  <input
+                    type="number"
+                    value={newTierRank}
+                    onChange={e => setNewTierRank(e.target.value ? parseInt(e.target.value, 10) : '')}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm focus:border-cyan-400 focus:outline-none"
+                    placeholder="تلقائي (الأعلى رقماً يتصدر)"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">اختياري: اتركه فارغاً ليُحسب تلقائياً</span>
+                </div>
+              </div>
+
+              {/* Color Chooser */}
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+                <label className="block text-xs font-mono font-bold text-cyan-300 uppercase">
+                  لون المستوى وشارة التصنيف (Tier Color):
+                </label>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={newTierColor}
+                      onChange={e => setNewTierColor(e.target.value)}
+                      className="w-11 h-11 rounded-xl border border-slate-700 cursor-pointer bg-slate-900"
+                    />
+                    <input
+                      type="text"
+                      value={newTierColor}
+                      onChange={e => setNewTierColor(e.target.value)}
+                      className="w-28 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono text-xs uppercase"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* Preset chips */}
+                  <div className="flex flex-wrap gap-1.5 flex-1">
+                    {COLOR_PRESETS.map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setNewTierColor(p.color)}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer hover:scale-105"
+                        style={{
+                          backgroundColor: `${p.color}20`,
+                          borderColor: `${p.color}60`,
+                          color: p.color,
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live Preview Badge */}
+                <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+                  <span className="text-xs text-slate-400 font-mono">معاينة شكل الشارة في الموقع:</span>
+                  <span
+                    className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-mono font-bold border transition-all"
+                    style={{
+                      backgroundColor: `${newTierColor}25`,
+                      borderColor: `${newTierColor}70`,
+                      color: '#ffffff',
+                      boxShadow: `0 0 15px ${newTierColor}30`,
+                    }}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{
+                        backgroundColor: newTierColor,
+                        boxShadow: `0 0 8px ${newTierColor}`,
+                      }}
+                    />
+                    <span>{newTierName || 'TIER'}</span>
+                    {newTierLabel && <span className="text-[11px] text-slate-300">({newTierLabel})</span>}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white flex items-center gap-2 cursor-pointer shadow-lg"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{saving ? 'جاري الإضافة...' : 'إضافة المستوى إلى السيرفر'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* List of Current Tiers with Inline Color Changing & Deletion */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/25 space-y-5">
+            <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-bold text-lg text-white">
+                  المستويات والتصنيفات الحالية في السيرفر ({tiersList.length})
+                </h3>
+                <p className="text-xs text-slate-400">
+                  يمكنك تغيير لون أي تصنيف مباشرة وحفظه، أو تعديل ترتيبه وحذفه.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {tiersList.map(tier => {
+                const isEditing = editingTier?.name === tier.name;
+
+                return (
+                  <div
+                    key={tier.name}
+                    className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/30 transition-all space-y-4"
+                  >
+                    {isEditing ? (
+                      /* Inline Full Edit Form */
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                          <span className="text-xs font-bold text-cyan-300 font-mono">
+                            تعديل المستوى: {editingTier.name}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-slate-400 font-mono">الاسم التوضيحي</label>
+                            <input
+                              type="text"
+                              value={editingTier.label || ''}
+                              onChange={e => setEditingTier({ ...editingTier, label: e.target.value })}
+                              className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-slate-400 font-mono">الرتبة الرقمية (Rank)</label>
+                            <input
+                              type="number"
+                              value={editingTier.rank}
+                              onChange={e => setEditingTier({ ...editingTier, rank: parseInt(e.target.value, 10) || 0 })}
+                              className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Color Picker inside Edit */}
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-mono block mb-1">اللون المخصص</label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={editingTier.color}
+                              onChange={e => setEditingTier({ ...editingTier, color: e.target.value })}
+                              className="w-9 h-9 rounded-lg border border-slate-700 cursor-pointer bg-slate-900"
+                            />
+                            <input
+                              type="text"
+                              value={editingTier.color}
+                              onChange={e => setEditingTier({ ...editingTier, color: e.target.value })}
+                              className="w-24 px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white font-mono"
+                              dir="ltr"
+                            />
+                            <div className="flex flex-wrap gap-1 flex-1">
+                              {COLOR_PRESETS.slice(0, 6).map((p, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setEditingTier({ ...editingTier, color: p.color })}
+                                  className="w-5 h-5 rounded-md border"
+                                  style={{ backgroundColor: p.color, borderColor: `${p.color}80` }}
+                                  title={p.label}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateTier(editingTier)}
+                            disabled={saving}
+                            className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold transition-all cursor-pointer"
+                          >
+                            حفظ التعديل
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingTier(null)}
+                            className="px-4 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs cursor-pointer"
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Display Card with Fast Color Tweaker */
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="px-3.5 py-1.5 rounded-xl font-mono text-sm font-extrabold border transition-all"
+                              style={{
+                                backgroundColor: `${tier.color}25`,
+                                borderColor: `${tier.color}70`,
+                                color: '#ffffff',
+                                boxShadow: `0 0 15px ${tier.color}30`,
+                              }}
+                            >
+                              <span
+                                className="inline-block w-2.5 h-2.5 rounded-full ml-1.5"
+                                style={{ backgroundColor: tier.color }}
+                              />
+                              {tier.name}
+                            </span>
+                            <div>
+                              <div className="font-bold text-white text-sm">{tier.label || tier.name}</div>
+                              <div className="text-[11px] font-mono text-slate-400">الترتيب: #{tier.rank}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditingTier(tier)}
+                              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
+                              title="تعديل بيانات المستوى"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTier(tier.name)}
+                              className="p-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 text-red-300 transition-colors cursor-pointer"
+                              title="حذف هذا المستوى"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Quick Color Change Bar */}
+                        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-slate-400 font-mono">اللون:</span>
+                            <input
+                              type="color"
+                              value={tier.color}
+                              onChange={e => {
+                                const newColor = e.target.value;
+                                setTiersList(prev => prev.map(t => t.name === tier.name ? { ...t, color: newColor } : t));
+                              }}
+                              className="w-7 h-7 rounded-lg border border-slate-700 cursor-pointer bg-slate-900"
+                              title="اضغط لاختيار لون جديد"
+                            />
+                            <span className="text-xs font-mono text-slate-300 uppercase">{tier.color}</span>
+                          </div>
+
+                          {/* Quick Color Presets Chips */}
+                          <div className="flex items-center gap-1">
+                            {['#ef4444', '#f97316', '#f59e0b', '#10b981', '#00e5ff', '#38bdf8', '#3b82f6', '#a855f7'].map(c => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => {
+                                  handleUpdateTier({ ...tier, color: c });
+                                }}
+                                className="w-4 h-4 rounded-full border transition-transform hover:scale-125 cursor-pointer"
+                                style={{ backgroundColor: c, borderColor: `${c}80` }}
+                                title={`تغيير اللون إلى ${c}`}
+                              />
+                            ))}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateTier(tier)}
+                            disabled={saving}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-500 hover:text-black text-cyan-300 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                          >
+                            <Save className="w-3 h-3" />
+                            <span>حفظ اللون</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tab: Supported Test Servers (with Images & Text support) */}
       {activeTab === 'servers' && (
         <div className="space-y-8 text-right">
@@ -1924,7 +2429,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     />
                     <button
                       type="button"
-                      onClick={handleLookupDiscord}
+                      onClick={() => handleLookupDiscord()}
                       disabled={lookingUpDiscord}
                       className="px-3.5 py-2.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 text-xs font-mono flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer border border-cyan-500/40"
                       title="التحقق من حساب الديسكورد وجلب الصورة والاسم"
@@ -1945,35 +2450,50 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                     onChange={e => setPlayerTier(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none font-mono"
                   >
-                    {WHITE_KINGDOM_TIERS.map(t => (
+                    {tiersList.map(t => (
                       <option key={t.name} value={t.name}>
-                        {t.name} - {t.label} (Rank {t.rank})
+                        {t.name} {t.label ? `- ${t.label}` : ''} (Rank {t.rank})
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Editable Discord Display Name & Avatar Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+              {/* Editable Discord 3 Fields: Display Name, Username (@handle), and Avatar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
                 <div>
                   <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1">
-                    اسم اللاعب في ديسكورد (Discord Display Name)
+                    الاسم المعروض (Display Name)
                   </label>
                   <input
                     type="text"
                     value={playerDiscordName}
                     onChange={e => setPlayerDiscordName(e.target.value)}
-                    placeholder="مثال: itz_player أو يُجلب تلقائياً من الـ ID"
+                    placeholder="مثال: White Sama"
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none"
                   />
-                  <span className="text-[10px] text-slate-500 mt-1 block">يظهر بجانب اسم ماين كرافت في لوحة الصدارة</span>
+                  <span className="text-[10px] text-slate-500 mt-1 block">يظهر كاسم رئيسي في لوحة الصدارة</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1">
+                    اسم المستخدم الفريد (Username)
+                  </label>
+                  <input
+                    type="text"
+                    value={playerDiscordUsername}
+                    onChange={e => setPlayerDiscordUsername(e.target.value)}
+                    placeholder="مثال: itz_white_kh"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-cyan-400 focus:outline-none font-mono"
+                    dir="ltr"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">يظهر كـ @username في لوحة الصدارة</span>
                 </div>
 
                 <div>
                   <ImageUploadInput
                     label="صورة حساب ديسكورد (Discord Avatar)"
-                    sublabel="تُجلب تلقائياً من الـ ID أو يمكنك رفع صورة مخصصة من جهازك"
+                    sublabel="تُجلب تلقائياً من الـ ID أو يمكنك رفع صورة من جهازك"
                     value={playerDiscordAvatar}
                     onChange={setPlayerDiscordAvatar}
                     aspectRatio="square"
@@ -1982,7 +2502,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
               </div>
 
               {/* Resolved Discord Live Preview */}
-              {(playerDiscordName || playerDiscordAvatar) && (
+              {(playerDiscordName || playerDiscordUsername || playerDiscordAvatar) && (
                 <div className="p-3.5 rounded-xl bg-slate-900/90 border border-cyan-500/30 flex items-center gap-3">
                   <img
                     src={playerDiscordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
@@ -1991,7 +2511,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-slate-400">معاينة الحساب كما سيظهر للجميع في لوحة الصدارة:</div>
-                    <div className="text-sm font-bold text-white truncate">{playerDiscordName || 'Gladiator'}</div>
+                    <div className="text-sm font-bold text-white truncate flex items-center gap-2">
+                      <span>{playerDiscordName || 'Gladiator'}</span>
+                      {playerDiscordUsername && (
+                        <span className="text-xs font-mono text-cyan-400" dir="ltr">@{playerDiscordUsername}</span>
+                      )}
+                    </div>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-semibold">
                     جاهز للعرض
@@ -2151,21 +2676,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                             onChange={e => setEditingPlayer({ ...editingPlayer, tierName: e.target.value })}
                             className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm font-mono"
                           >
-                            {WHITE_KINGDOM_TIERS.map(t => (
-                              <option key={t.name} value={t.name}>{t.name} (Rank {t.rank})</option>
+                            {tiersList.map(t => (
+                              <option key={t.name} value={t.name}>{t.name} {t.label ? `(${t.label})` : ''} - Rank {t.rank}</option>
                             ))}
                           </select>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <label className="text-[10px] text-slate-400 font-mono">اسم حساب ديسكورد</label>
+                          <label className="text-[10px] text-slate-400 font-mono">الاسم المعروض</label>
                           <input
                             type="text"
                             value={editingPlayer.discordDisplayName || ''}
                             onChange={e => setEditingPlayer({ ...editingPlayer, discordDisplayName: e.target.value })}
                             className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-mono">اسم المستخدم الفريد (@username)</label>
+                          <input
+                            type="text"
+                            value={editingPlayer.discordUsername || ''}
+                            onChange={e => setEditingPlayer({ ...editingPlayer, discordUsername: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm font-mono"
+                            dir="ltr"
                           />
                         </div>
                         <div>
@@ -2218,12 +2753,30 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         <div>
                           <div className="font-bold text-white text-sm flex items-center gap-2">
                             <span>{player.minecraftName}</span>
-                            <span className="text-[11px] px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 font-mono font-bold">
-                              {player.tierName}
-                            </span>
+                            {(() => {
+                              const tDef = tiersList.find(t => t.name.toLowerCase() === player.tierName.toLowerCase());
+                              const tColor = tDef?.color || '#00e5ff';
+                              return (
+                                <span
+                                  className="text-[11px] px-2.5 py-0.5 rounded-lg border font-mono font-bold"
+                                  style={{
+                                    backgroundColor: `${tColor}20`,
+                                    borderColor: `${tColor}60`,
+                                    color: tColor,
+                                  }}
+                                >
+                                  {player.tierName}
+                                </span>
+                              );
+                            })()}
                           </div>
-                          <div className="text-xs text-slate-400">
-                            ديسكورد: <span className="text-slate-300">{player.discordDisplayName}</span> <span className="font-mono text-[10px] text-slate-500" dir="ltr">({player.discordId})</span>
+                          <div className="text-xs text-slate-400 flex items-center gap-1.5 flex-wrap">
+                            <span>ديسكورد:</span>
+                            <span className="text-slate-300 font-semibold">{player.discordDisplayName}</span>
+                            {player.discordUsername && (
+                              <span className="text-cyan-400 font-mono text-[11px]" dir="ltr">@{player.discordUsername}</span>
+                            )}
+                            <span className="font-mono text-[10px] text-slate-500" dir="ltr">({player.discordId})</span>
                           </div>
                         </div>
                       </div>

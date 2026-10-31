@@ -30,10 +30,10 @@ export const Footer: React.FC<FooterProps> = ({ serverName, logoUrl, onNavigate 
               الرئيسية
             </button>
             <button
-              onClick={() => onNavigate('about')}
+              onClick={() => onNavigate('server')}
               className="hover:text-cyan-300 transition-colors cursor-pointer"
             >
-              عن السيرفر
+              السيرفر
             </button>
             <button
               onClick={() => onNavigate('tier-test')}

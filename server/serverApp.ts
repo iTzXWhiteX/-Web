@@ -4,8 +4,12 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { apiRouter, handleDiscordCallback } from './api.ts';
+import { db } from './db.ts';
 
 export async function startServer() {
+  // Ensure database initialization completes before the server starts accepting requests
+  await db.init();
+
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 

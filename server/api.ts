@@ -43,6 +43,7 @@ apiRouter.get('/public-data', (req: Request, res: Response) => {
   const leaderboard = db.getLeaderboardPublic();
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
+  const tiers = db.getTiers();
 
   res.json({
     settings,
@@ -50,7 +51,13 @@ apiRouter.get('/public-data', (req: Request, res: Response) => {
     leaderboard,
     newsArticles,
     roles,
+    tiers,
   });
+});
+
+apiRouter.get('/tiers', (req: Request, res: Response) => {
+  const tiers = db.getTiers();
+  res.json({ tiers });
 });
 
 apiRouter.get('/news', (req: Request, res: Response) => {
@@ -226,7 +233,7 @@ export async function handleDiscordCallback(req: Request, res: Response): Promis
     }
 
     // 3. Upsert authenticated user profile in persistent database
-    const user = db.upsertUser({
+    const user = await db.upsertUser({
       discordId: discordUser.id,
       username: discordUser.username,
       globalName: discordUser.global_name,
@@ -237,7 +244,7 @@ export async function handleDiscordCallback(req: Request, res: Response): Promis
 
     // If the authenticated user is an admin, automatically synchronize the owner profile info
     if (db.isAdmin(user.discordId)) {
-      db.updateSettings({
+      await db.updateSettings({
         ownerDiscordId: user.discordId,
         ownerName: user.globalName || user.username,
         ownerAvatar: user.avatar,
@@ -295,7 +302,7 @@ export async function handleDiscordCallback(req: Request, res: Response): Promis
 }
 
 // Development / Testing Instant Login endpoint
-apiRouter.post('/auth/dev-login', (req: Request, res: Response) => {
+apiRouter.post('/auth/dev-login', async (req: Request, res: Response) => {
   const { discordId, username, asAdmin } = req.body;
   const validation = validateDiscordId(discordId);
   if (!validation.valid) {
@@ -305,7 +312,7 @@ apiRouter.post('/auth/dev-login', (req: Request, res: Response) => {
 
   const defaultAvatar = resolveDiscordAvatar(discordId.trim());
 
-  const user = db.upsertUser({
+  const user = await db.upsertUser({
     discordId: discordId.trim(),
     username: username?.trim() || `Player_${discordId.slice(-4)}`,
     globalName: username?.trim() || `Player_${discordId.slice(-4)}`,
@@ -313,7 +320,7 @@ apiRouter.post('/auth/dev-login', (req: Request, res: Response) => {
   });
 
   if (asAdmin) {
-    db.setAdminStatus(user.discordId, true);
+    await db.setAdminStatus(user.discordId, true);
     user.isAdmin = true;
   }
 
@@ -356,6 +363,7 @@ apiRouter.get('/admin/data', requireAdmin, (req: Request, res: Response) => {
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
   const users = db.getAllUsers();
+  const tiers = db.getTiers();
 
   res.json({
     settings,
@@ -364,11 +372,12 @@ apiRouter.get('/admin/data', requireAdmin, (req: Request, res: Response) => {
     newsArticles,
     roles,
     users,
+    tiers,
   });
 });
 
 // 1. Update Website Settings (Server name, logo URL, YouTube URL, Discord invite, Owner info, About text, Tier Test text, News text)
-apiRouter.patch('/admin/settings', requireAdmin, (req: Request, res: Response) => {
+apiRouter.patch('/admin/settings', requireAdmin, async (req: Request, res: Response) => {
   const {
     serverName,
     logoUrl,
@@ -408,19 +417,19 @@ apiRouter.patch('/admin/settings', requireAdmin, (req: Request, res: Response) =
   if (typeof newsContent === 'string') updates.newsContent = newsContent;
   if (typeof welcomeBadgeText === 'string') updates.welcomeBadgeText = welcomeBadgeText.trim();
 
-  const updatedSettings = db.updateSettings(updates);
+  const updatedSettings = await db.updateSettings(updates);
   res.json({ success: true, settings: updatedSettings });
 });
 
 // 2. Manage Supported Servers
-apiRouter.post('/admin/servers', requireAdmin, (req: Request, res: Response) => {
+apiRouter.post('/admin/servers', requireAdmin, async (req: Request, res: Response) => {
   const { name, info, imageUrl, order } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
     res.status(400).json({ error: 'اسم السيرفر مطلوب.' });
     return;
   }
 
-  const newServer = db.addTestServer({
+  const newServer = await db.addTestServer({
     name: name.trim(),
     info: (info || '').trim(),
     imageUrl: imageUrl ? String(imageUrl).trim() : undefined,
@@ -430,11 +439,11 @@ apiRouter.post('/admin/servers', requireAdmin, (req: Request, res: Response) => 
   res.status(201).json({ success: true, server: newServer });
 });
 
-apiRouter.put('/admin/servers/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.put('/admin/servers/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, info, imageUrl, order } = req.body;
 
-  const updated = db.updateTestServer(id, {
+  const updated = await db.updateTestServer(id, {
     ...(name !== undefined ? { name: String(name).trim() } : {}),
     ...(info !== undefined ? { info: String(info).trim() } : {}),
     ...(imageUrl !== undefined ? { imageUrl: String(imageUrl).trim() } : {}),
@@ -449,9 +458,9 @@ apiRouter.put('/admin/servers/:id', requireAdmin, (req: Request, res: Response) 
   res.json({ success: true, server: updated });
 });
 
-apiRouter.delete('/admin/servers/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.delete('/admin/servers/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const deleted = db.deleteTestServer(id);
+  const deleted = await db.deleteTestServer(id);
   if (!deleted) {
     res.status(404).json({ error: 'السيرفر غير موجود.' });
     return;
@@ -460,7 +469,7 @@ apiRouter.delete('/admin/servers/:id', requireAdmin, (req: Request, res: Respons
 });
 
 // 3. Manage Leaderboard Entries & Tests
-apiRouter.post('/admin/leaderboard', requireAdmin, (req: Request, res: Response) => {
+apiRouter.post('/admin/leaderboard', requireAdmin, async (req: Request, res: Response) => {
   const { minecraftName, discordId, discordDisplayName, discordUsername, discordAvatar, tierName, gamesPlayed, notes } = req.body;
 
   // Validate Minecraft name
@@ -478,7 +487,7 @@ apiRouter.post('/admin/leaderboard', requireAdmin, (req: Request, res: Response)
 
   const cleanTier = (tierName || 'HT1').trim().toUpperCase();
 
-  const newPlayer = db.addLeaderboardPlayer({
+  const newPlayer = await db.addLeaderboardPlayer({
     minecraftName: minecraftName.trim(),
     discordId: discordId.trim(),
     discordDisplayName: discordDisplayName ? String(discordDisplayName).trim() : undefined,
@@ -492,7 +501,7 @@ apiRouter.post('/admin/leaderboard', requireAdmin, (req: Request, res: Response)
   res.status(201).json({ success: true, player: newPlayer });
 });
 
-apiRouter.put('/admin/leaderboard/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.put('/admin/leaderboard/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { minecraftName, discordId, discordDisplayName, discordUsername, discordAvatar, tierName, gamesPlayed, notes } = req.body;
 
@@ -539,7 +548,7 @@ apiRouter.put('/admin/leaderboard/:id', requireAdmin, (req: Request, res: Respon
     updates.notes = String(notes).trim();
   }
 
-  const updated = db.updateLeaderboardPlayer(id, updates);
+  const updated = await db.updateLeaderboardPlayer(id, updates);
   if (!updated) {
     res.status(404).json({ error: 'اللاعب غير موجود في لوحة الصدارة.' });
     return;
@@ -548,9 +557,9 @@ apiRouter.put('/admin/leaderboard/:id', requireAdmin, (req: Request, res: Respon
   res.json({ success: true, player: updated });
 });
 
-apiRouter.delete('/admin/leaderboard/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.delete('/admin/leaderboard/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const deleted = db.deleteLeaderboardPlayer(id);
+  const deleted = await db.deleteLeaderboardPlayer(id);
   if (!deleted) {
     res.status(404).json({ error: 'Leaderboard entry not found.' });
     return;
@@ -666,13 +675,13 @@ apiRouter.get('/admin/discord-lookup/:discordId', requireAdmin, async (req: Requ
 });
 
 // 4. Server Roles Management (Custom Roles with color & emoji)
-apiRouter.post('/admin/roles', requireAdmin, (req: Request, res: Response) => {
+apiRouter.post('/admin/roles', requireAdmin, async (req: Request, res: Response) => {
   const { name, color, emoji, order, description, criteria, showInList } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
     res.status(400).json({ error: 'اسم الرول مطلوب.' });
     return;
   }
-  const newRole = db.addRole({
+  const newRole = await db.addRole({
     name: name.trim(),
     color: color ? String(color).trim() : '#00e5ff',
     emoji: emoji ? String(emoji).trim() : '🛡️',
@@ -684,10 +693,10 @@ apiRouter.post('/admin/roles', requireAdmin, (req: Request, res: Response) => {
   res.status(201).json({ success: true, role: newRole });
 });
 
-apiRouter.put('/admin/roles/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.put('/admin/roles/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, color, emoji, order, description, criteria, showInList } = req.body;
-  const updated = db.updateRole(id, {
+  const updated = await db.updateRole(id, {
     ...(name !== undefined ? { name: String(name).trim() } : {}),
     ...(color !== undefined ? { color: String(color).trim() } : {}),
     ...(emoji !== undefined ? { emoji: String(emoji).trim() } : {}),
@@ -703,9 +712,9 @@ apiRouter.put('/admin/roles/:id', requireAdmin, (req: Request, res: Response) =>
   res.json({ success: true, role: updated });
 });
 
-apiRouter.delete('/admin/roles/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.delete('/admin/roles/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const deleted = db.deleteRole(id);
+  const deleted = await db.deleteRole(id);
   if (!deleted) {
     res.status(404).json({ error: 'الرول غير موجود.' });
     return;
@@ -714,7 +723,7 @@ apiRouter.delete('/admin/roles/:id', requireAdmin, (req: Request, res: Response)
 });
 
 // 5. News & Announcements Management
-apiRouter.post('/admin/news', requireAdmin, (req: Request, res: Response) => {
+apiRouter.post('/admin/news', requireAdmin, async (req: Request, res: Response) => {
   const { title, content, category, imageUrl, pinned } = req.body;
   if (!title || typeof title !== 'string' || !title.trim()) {
     res.status(400).json({ error: 'عنوان الخبر مطلوب.' });
@@ -724,7 +733,7 @@ apiRouter.post('/admin/news', requireAdmin, (req: Request, res: Response) => {
     res.status(400).json({ error: 'محتوى الخبر مطلوب.' });
     return;
   }
-  const newArticle = db.addNewsArticle({
+  const newArticle = await db.addNewsArticle({
     title: title.trim(),
     content: content.trim(),
     category: category ? String(category).trim() : 'إعلان',
@@ -734,10 +743,10 @@ apiRouter.post('/admin/news', requireAdmin, (req: Request, res: Response) => {
   res.status(201).json({ success: true, article: newArticle });
 });
 
-apiRouter.put('/admin/news/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.put('/admin/news/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
   const { title, content, category, imageUrl, pinned } = req.body;
-  const updated = db.updateNewsArticle(id, {
+  const updated = await db.updateNewsArticle(id, {
     ...(title !== undefined ? { title: String(title).trim() } : {}),
     ...(content !== undefined ? { content: String(content).trim() } : {}),
     ...(category !== undefined ? { category: String(category).trim() } : {}),
@@ -751,14 +760,89 @@ apiRouter.put('/admin/news/:id', requireAdmin, (req: Request, res: Response) => 
   res.json({ success: true, article: updated });
 });
 
-apiRouter.delete('/admin/news/:id', requireAdmin, (req: Request, res: Response) => {
+apiRouter.delete('/admin/news/:id', requireAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const deleted = db.deleteNewsArticle(id);
+  const deleted = await db.deleteNewsArticle(id);
   if (!deleted) {
     res.status(404).json({ error: 'الخبر غير موجود.' });
     return;
   }
   res.json({ success: true, message: 'تم حذف الخبر بنجاح.' });
+});
+
+// --- Custom Tiers Management (Add tiers, edit colors/labels/ranks, delete) ---
+apiRouter.post('/admin/tiers', requireAdmin, async (req: Request, res: Response) => {
+  const { name, color, label, rank } = req.body;
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    res.status(400).json({ error: 'اسم التصنيف (Tier Name) مطلوب.' });
+    return;
+  }
+  if (!color || typeof color !== 'string' || !color.trim()) {
+    res.status(400).json({ error: 'لون التصنيف (Tier Color) مطلوب.' });
+    return;
+  }
+
+  const newTier = await db.addTier({
+    name: name.trim().toUpperCase(),
+    color: color.trim(),
+    label: label ? String(label).trim() : undefined,
+    rank: typeof rank === 'number' ? rank : undefined,
+  });
+
+  res.status(201).json({
+    success: true,
+    tier: newTier,
+    tiers: db.getTiers(),
+    message: `تم إضافة/تحديث المستوى ${newTier.name} بنجاح.`,
+  });
+});
+
+apiRouter.put('/admin/tiers/:name', requireAdmin, async (req: Request, res: Response) => {
+  const { name } = req.params;
+  const { name: newName, color, label, rank } = req.body;
+
+  const updated = await db.updateTier(name, {
+    ...(newName ? { name: String(newName).trim().toUpperCase() } : {}),
+    ...(color ? { color: String(color).trim() } : {}),
+    ...(label !== undefined ? { label: String(label).trim() } : {}),
+    ...(typeof rank === 'number' ? { rank } : {}),
+  });
+
+  if (!updated) {
+    res.status(404).json({ error: 'المستوى غير موجود.' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    tier: updated,
+    tiers: db.getTiers(),
+    message: `تم تحديث المستوى ${updated.name} بنجاح.`,
+  });
+});
+
+apiRouter.delete('/admin/tiers/:name', requireAdmin, async (req: Request, res: Response) => {
+  const { name } = req.params;
+  const deleted = await db.deleteTier(name);
+  if (!deleted) {
+    res.status(404).json({ error: 'المستوى غير موجود.' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    tiers: db.getTiers(),
+    message: `تم حذف المستوى ${name.toUpperCase()} بنجاح.`,
+  });
+});
+
+apiRouter.post('/admin/tiers/reset', requireAdmin, async (req: Request, res: Response) => {
+  const resetTiers = await db.resetTiers();
+  res.json({
+    success: true,
+    tiers: resetTiers,
+    message: 'تمت استعادة تصنيفات ومستويات السيرفر الافتراضية بنجاح.',
+  });
 });
 
 // 6. Direct Image Upload from Device (handles file uploads with base64 data URLs)
