@@ -58,16 +58,22 @@ export const AmbientBackgroundLogo: React.FC<{ logoUrl?: string }> = ({ logoUrl 
       className="fixed inset-0 pointer-events-none z-0 overflow-hidden flex items-center justify-center select-none"
       aria-hidden="true"
     >
-      {/* Subtle atmospheric ambient glows */}
-      <div className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full bg-cyan-600/10 blur-[140px]" />
-      <div className="absolute bottom-[-10%] right-[15%] w-[600px] h-[600px] rounded-full bg-blue-800/10 blur-[150px]" />
+      {/* Layer 1: Slow cyan aurora orb */}
+      <div className="absolute top-[-15%] left-[10%] w-[600px] h-[600px] rounded-full bg-cyan-500/12 blur-[140px] animate-aurora-1" />
+
+      {/* Layer 2: Deep blue ambient glow */}
+      <div className="absolute bottom-[-15%] right-[10%] w-[650px] h-[650px] rounded-full bg-blue-700/15 blur-[160px] animate-aurora-2" />
+
+      {/* Layer 3: Soft white-light cyan accent in center */}
+      <div className="absolute top-[35%] left-[40%] w-[450px] h-[450px] rounded-full bg-sky-300/8 blur-[130px] animate-aurora-3" />
 
       {/* Uploaded Server Logo as soft blurred background atmosphere */}
-      <div className="relative w-[450px] h-[450px] md:w-[700px] md:h-[700px] opacity-[0.05] filter blur-[3px]">
+      <div className="relative w-[450px] h-[450px] md:w-[700px] md:h-[700px] opacity-[0.04] filter blur-[2px] transition-opacity duration-1000">
         <img
           src={logoUrl || '/logo.png'}
           alt=""
           className="w-full h-full object-contain"
+          loading="eager"
         />
       </div>
     </div>

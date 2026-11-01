@@ -10,19 +10,19 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ serverName, logoUrl, onNavigate }) => {
   return (
-    <footer className="relative z-10 border-t border-cyan-500/15 bg-[#05070e] py-10 text-slate-400" dir="rtl">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+    <footer className="relative z-10 border-t border-cyan-500/15 bg-[#050813] py-8 text-slate-400 select-none" dir="rtl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Logo and Server Name */}
           <div className="flex items-center gap-3">
             <WhiteKingdomLogo size="sm" logoUrl={logoUrl} serverName={serverName} glow={false} />
-            <span className="font-heading font-bold text-white text-base">
+            <span className="font-heading font-bold text-white text-sm sm:text-base">
               {serverName}
             </span>
           </div>
 
           {/* Navigation Links in Arabic */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-slate-300">
+          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-xs font-semibold text-slate-300">
             <button
               onClick={() => onNavigate('home')}
               className="hover:text-cyan-300 transition-colors cursor-pointer"
@@ -49,12 +49,12 @@ export const Footer: React.FC<FooterProps> = ({ serverName, logoUrl, onNavigate 
             </button>
           </div>
 
-          {/* Discreet Admin Link */}
-          <div className="flex items-center gap-4 text-xs text-slate-500">
+          {/* Copyright & Discreet Admin Link */}
+          <div className="flex items-center gap-3 text-xs text-slate-500">
             <span>&copy; {new Date().getFullYear()} {serverName}. جميع الحقوق محفوظة.</span>
             <button
               onClick={() => onNavigate('admin')}
-              className="text-slate-600 hover:text-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
+              className="text-slate-600 hover:text-cyan-400 transition-colors flex items-center gap-1 cursor-pointer p-1"
               title="لوحة الإدارة"
             >
               <Shield className="w-3.5 h-3.5" />

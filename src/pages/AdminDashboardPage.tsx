@@ -1047,10 +1047,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-800 pb-3">
         <button
           onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'settings'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <Globe className="w-4 h-4" />
@@ -1059,10 +1059,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('news')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'news'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <Newspaper className="w-4 h-4" />
@@ -1071,10 +1071,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('roles')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'roles'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
@@ -1083,10 +1083,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('about')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'about'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -1095,10 +1095,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('tierTest')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'tierTest'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <FileText className="w-4 h-4" />
@@ -1107,10 +1107,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('tiers')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'tiers'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <Award className="w-4 h-4" />
@@ -1119,10 +1119,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('servers')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'servers'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <Server className="w-4 h-4" />
@@ -1131,10 +1131,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('leaderboard')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'leaderboard'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <Trophy className="w-4 h-4" />
@@ -1143,10 +1143,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('profiles')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
             activeTab === 'profiles'
-              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
           <Shield className="w-4 h-4" />

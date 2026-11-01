@@ -172,8 +172,9 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 relative z-10">
         {loading ? (
-          <div className="min-h-[60vh] flex items-center justify-center text-slate-400 text-sm" dir="rtl">
-            جاري التحميل...
+          <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-slate-400 text-sm" dir="rtl">
+            <div className="w-10 h-10 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin shadow-[0_0_15px_rgba(0,229,255,0.3)]" />
+            <span className="text-xs font-semibold text-cyan-300/80 font-mono tracking-wider">جاري تحميل بيانات مجتمع White Kingdom...</span>
           </div>
         ) : activePage === 'admin' ? (
           currentUser?.isAdmin ? (

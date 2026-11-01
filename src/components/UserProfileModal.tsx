@@ -8,9 +8,8 @@ import {
   Copy,
   Check,
   LogOut,
-  Sparkles,
-  ExternalLink,
-  Info,
+  FileText,
+  UserCheck,
 } from 'lucide-react';
 import { UserProfile, ServerRole, TierDefinition } from '../types/pvp.js';
 import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
@@ -51,7 +50,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none"
       dir="rtl"
       onClick={onClose}
     >
@@ -89,9 +88,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <img
                 src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                 alt={user.username}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border-2 border-cyan-400 object-cover shadow-[0_0_25px_rgba(0,229,255,0.5)] bg-slate-950"
+                className="w-22 h-22 sm:w-26 sm:h-26 rounded-2xl border-2 border-cyan-400 object-cover shadow-[0_0_25px_rgba(0,229,255,0.4)] bg-slate-950"
               />
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_#10b981]" title="متصل" />
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_#10b981]" title="متصل" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -99,190 +98,159 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <span>{user.globalName || user.username}</span>
                 {tierDef && (
                   <span
-                    className="px-2.5 py-0.5 rounded-lg text-xs font-heading font-bold shadow-sm"
-                    style={{
-                      backgroundColor: `${tierDef.color || '#00e5ff'}20`,
-                      color: tierDef.color || '#00e5ff',
-                      border: `1px solid ${tierDef.color || '#00e5ff'}60`,
-                    }}
+                    className="px-2 py-0.5 rounded-lg text-xs font-mono font-extrabold text-black"
+                    style={{ backgroundColor: tierDef.color }}
                   >
                     {tierDef.name}
                   </span>
                 )}
               </h2>
-              <p className="text-slate-400 text-xs sm:text-sm font-mono mt-0.5" dir="ltr">
+              <p className="text-xs font-mono text-slate-400 mt-0.5" dir="ltr">
                 @{user.username}
               </p>
 
-              {/* Discord Snowflake ID badge with copy */}
-              <div className="mt-2 flex items-center justify-center sm:justify-start gap-2">
-                <button
-                  onClick={handleCopyDiscordId}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-700/80 text-[11px] font-mono text-cyan-300 hover:border-cyan-400/60 transition-colors cursor-pointer"
-                  title="نسخ معرّف الديسكورد"
-                  dir="ltr"
-                >
-                  <span>ID: {user.discordId}</span>
-                  {copiedId ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
-                </button>
-              </div>
+              {/* Discord ID Copy Pill */}
+              <button
+                onClick={handleCopyDiscordId}
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono text-cyan-300 hover:border-cyan-500/50 transition-all cursor-pointer"
+                title="اضغط لنسخ Discord ID"
+              >
+                <span className="text-[10px] text-slate-400">Discord ID:</span>
+                <span dir="ltr">{user.discordId}</span>
+                {copiedId ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-slate-400" />
+                )}
+              </button>
             </div>
           </div>
 
+          {/* Details Section */}
           <div className="space-y-4">
-            {/* Section 1: Assigned Roles */}
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <Shield className="w-4 h-4 text-cyan-400" />
-                  <span>الرولات الممنوحة في السيرفر</span>
+            
+            {/* Current Tier Status Card */}
+            <div className="p-4 rounded-2xl glass-card text-right">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
+                  <Award className="w-4 h-4 text-cyan-400" />
+                  <span>المستوى التنافسي المعتمد في السيرفر</span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-mono">
-                  {resolvedRoles.length} رول
+                {tierDef ? (
+                  <span
+                    className="px-3 py-1 rounded-xl font-mono text-xs font-extrabold text-black shadow-md"
+                    style={{ backgroundColor: tierDef.color }}
+                  >
+                    {tierDef.name}
+                  </span>
+                ) : (
+                  <span className="text-xs font-mono text-slate-400">لم يتم تحديد المستوى بعد</span>
+                )}
+              </div>
+              {tierDef && (
+                <p className="text-xs text-slate-300 mt-2">
+                  {tierDef.label || tierDef.name} — الرتبة #{tierDef.rank} في مجتمع White Kingdom
+                </p>
+              )}
+            </div>
+
+            {/* Assigned Roles List */}
+            <div className="p-4 rounded-2xl glass-panel-subtle text-right space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-cyan-400" />
+                  <span>رولات السيرفر الممنوحة</span>
+                </div>
+                <span className="text-[11px] font-mono text-cyan-400">
+                  {resolvedRoles.length > 0 ? `${resolvedRoles.length} رول` : 'لا توجد رولات'}
                 </span>
               </div>
 
               {resolvedRoles.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {resolvedRoles.map((role) => (
-                    <div
+                    <span
                       key={role.id}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border shadow-sm"
                       style={{
-                        backgroundColor: `${role.color || '#00e5ff'}15`,
-                        color: role.color || '#00e5ff',
-                        border: `1px solid ${role.color || '#00e5ff'}40`,
+                        backgroundColor: `${role.color}18`,
+                        borderColor: `${role.color}50`,
+                        color: role.color,
                       }}
-                      title={role.description || role.criteria}
                     >
-                      <span className="text-sm">{role.emoji || '🛡️'}</span>
-                      <span>{role.name}</span>
-                    </div>
+                      {role.emoji && <span>{role.emoji}</span>}
+                      <span>@{role.name}</span>
+                    </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60 text-center">
-                  لا توجد رولات ممنوحة لهذا الحساب حالياً من قبل الإدارة.
+                <p className="text-xs text-slate-500">
+                  يتم منح الرولات التنافسية والإدارية من قِبل إدارة السيرفر.
                 </p>
               )}
             </div>
 
-            {/* Section 2: Rating & Tier */}
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80">
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <Award className="w-4 h-4 text-amber-400" />
-                  <span>المستوى والتقييم التنافسي (Tier)</span>
-                </div>
-              </div>
-
-              {tierDef ? (
-                <div
-                  className="flex items-center justify-between p-3 rounded-xl border"
-                  style={{
-                    backgroundColor: `${tierDef.color || '#00e5ff'}10`,
-                    borderColor: `${tierDef.color || '#00e5ff'}40`,
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center font-heading font-black text-lg shadow-lg"
-                      style={{
-                        backgroundColor: tierDef.color || '#00e5ff',
-                        color: '#000',
-                        boxShadow: `0 0 20px ${tierDef.color || '#00e5ff'}50`,
-                      }}
-                    >
-                      {tierDef.name}
-                    </div>
-                    <div>
-                      <div className="font-heading font-bold text-sm text-white">
-                        {tierDef.label || tierDef.name}
-                      </div>
-                      <div className="text-[11px] text-slate-300">
-                        الرتبة في السيرفر: #{tierDef.rank}
-                      </div>
-                    </div>
+            {/* Evaluation Details & Evaluator Notes */}
+            {user.evaluationNotes ? (
+              <div className="p-4 rounded-2xl glass-card text-right space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-cyan-300">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-cyan-400" />
+                    <span>ملاحظات التقييم وسجل الاختبار</span>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
-                    تقييم معتمد
-                  </span>
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
-                  <div className="flex items-center gap-2.5">
-                    <Info className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                    <span className="text-xs text-slate-300">
-                      لم يتم تحديد المستوى التنافسي (Tier) لهذا الحساب بعد.
-                    </span>
-                  </div>
-                  {onNavigateToTierTest && (
-                    <button
-                      onClick={() => {
-                        onClose();
-                        onNavigateToTierTest();
-                      }}
-                      className="text-xs font-bold text-cyan-400 hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                    >
-                      <span>تفاصيل اختبار المستويات</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
+                  {user.evaluatorName && (
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400 font-normal">
+                      <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>المقيّم: <strong className="text-white">{user.evaluatorName}</strong></span>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Section 3: Evaluation Details (Notes) */}
-            {user.evaluationNotes && (
-              <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    <span>ملاحظات وتفاصيل التقييم الإداري</span>
-                  </div>
-                  {user.evaluatedAt && (
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {new Date(user.evaluatedAt).toLocaleDateString('ar-EG')}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-200 leading-relaxed whitespace-pre-line bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
                   {user.evaluationNotes}
-                </p>
-                {user.evaluatorName && (
-                  <p className="text-[11px] text-slate-400 mt-2 text-left" dir="rtl">
-                    المُقيِّم: <span className="text-cyan-300 font-semibold">{user.evaluatorName}</span>
-                  </p>
+                </div>
+
+                {user.evaluatedAt && (
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono pt-1">
+                    <Calendar className="w-3 h-3 text-slate-500" />
+                    <span>تاريخ التقييم: {new Date(user.evaluatedAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+            ) : null}
 
-          {/* Action Footer */}
-          <div className="mt-6 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
-            {user.isAdmin && onNavigateToAdmin && (
+            {/* User Notice */}
+            <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+              * يتم تحديث وتعديل الرولات والتقييمات حصرياً من قِبل إدارة سيرفر ديسكورد الرسمية.
+            </p>
+
+            {/* Actions: Admin Panel + Logout */}
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+              {user.isAdmin && onNavigateToAdmin && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onNavigateToAdmin();
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl text-xs font-mono font-bold text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900/80 border border-cyan-500/40 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <Shield className="w-4 h-4 text-cyan-400" />
+                  <span>فتح لوحة الإدارة</span>
+                </button>
+              )}
+
               <button
                 onClick={() => {
                   onClose();
-                  onNavigateToAdmin();
+                  onLogout();
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 flex items-center gap-2 cursor-pointer transition-colors"
+                className="py-3 px-5 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-900/40 border border-red-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <Shield className="w-3.5 h-3.5" />
-                <span>لوحة تحكم الإدارة</span>
+                <LogOut className="w-4 h-4" />
+                <span>تسجيل الخروج</span>
               </button>
-            )}
+            </div>
 
-            <button
-              onClick={() => {
-                onClose();
-                onLogout();
-              }}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-red-950/40 hover:bg-red-900/50 text-red-300 border border-red-500/30 flex items-center gap-2 cursor-pointer transition-colors mr-auto"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>تسجيل الخروج</span>
-            </button>
           </div>
         </div>
       </div>
