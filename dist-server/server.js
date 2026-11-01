@@ -1,4 +1,5 @@
 // server/serverApp.ts
+import "dotenv/config";
 import express2 from "express";
 import cookieParser from "cookie-parser";
 import path3 from "path";
@@ -11,9 +12,11 @@ import path2 from "path";
 import crypto2 from "crypto";
 
 // server/db.ts
+import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import pg from "pg";
 
 // src/types/pvp.ts
 var WHITE_KINGDOM_TIERS = [
@@ -53,10 +56,40 @@ function resolveDiscordAvatar(discordId, customAvatar) {
 }
 function getTierRank(tierName, tierDefinitions = WHITE_KINGDOM_TIERS) {
   if (!tierName) return 0;
-  const match = tierDefinitions.find((t) => t.name.toLowerCase() === tierName.trim().toLowerCase());
-  return match ? match.rank : 0;
+  const clean = tierName.trim().toLowerCase();
+  const match = tierDefinitions.find((t) => t.name.toLowerCase() === clean);
+  if (match) return match.rank;
+  const m = clean.match(/^(ht|lt)(\d+)$/);
+  if (m) {
+    const isHt = m[1] === "ht";
+    const num = parseInt(m[2], 10);
+    const base = isHt ? 12 - num * 2 : 11 - num * 2;
+    return Math.max(0, base);
+  }
+  return 0;
 }
-function formatPublicLeaderboard(players) {
+function getTierDefinition(tierName, tierDefinitions = WHITE_KINGDOM_TIERS) {
+  if (!tierName) return void 0;
+  const clean = tierName.trim().toUpperCase();
+  return tierDefinitions.find((t) => t.name.toUpperCase() === clean);
+}
+function resolveUserRoles(assignedRoleIds = [], allRoles = []) {
+  if (!Array.isArray(assignedRoleIds) || assignedRoleIds.length === 0) return [];
+  const roleMap = /* @__PURE__ */ new Map();
+  for (const role of allRoles) {
+    roleMap.set(role.id, role);
+    roleMap.set(role.name.toLowerCase(), role);
+  }
+  const resolved = [];
+  for (const id of assignedRoleIds) {
+    const match = roleMap.get(id) || roleMap.get(id.toLowerCase());
+    if (match && !resolved.some((r) => r.id === match.id)) {
+      resolved.push(match);
+    }
+  }
+  return resolved.sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+function formatPublicLeaderboard(players, tierDefinitions) {
   const sorted = [...players].sort((a, b) => {
     if (b.tierRank !== a.tierRank) {
       return b.tierRank - a.tierRank;
@@ -68,15 +101,17 @@ function formatPublicLeaderboard(players) {
     rank: index + 1,
     minecraftName: p.minecraftName,
     discordDisplayName: p.discordDisplayName || `Discord_${p.discordId.slice(-4)}`,
+    discordUsername: p.discordUsername || void 0,
     discordAvatar: resolveDiscordAvatar(p.discordId, p.discordAvatar),
     tierName: p.tierName || "HT1",
-    tierRank: p.tierRank || getTierRank(p.tierName || "HT1"),
+    tierRank: p.tierRank || getTierRank(p.tierName || "HT1", tierDefinitions),
     gamesPlayed: Array.isArray(p.gamesPlayed) ? p.gamesPlayed : [],
     notes: p.notes || ""
   }));
 }
 
 // server/db.ts
+var { Pool } = pg;
 var __filename = fileURLToPath(import.meta.url);
 var __dirname = path.dirname(__filename);
 var DATA_DIR = path.resolve(__dirname, "../data");
@@ -148,22 +183,22 @@ var DEFAULT_ROLES = [
     showInList: true
   },
   {
-    id: "role_ht1",
-    name: "Tier 1 Apex",
+    id: "role_champion",
+    name: "Kingdom Champion",
     color: "#f59e0b",
     emoji: "\u{1F3C6}",
     order: 3,
-    description: "\u062D\u0645\u0644\u0629 \u062A\u0635\u0646\u064A\u0641 HT1 \u0627\u0644\u0646\u062E\u0628\u0648\u064A \u0648\u0623\u0639\u0644\u0649 \u0631\u062A\u0628\u0629 \u062A\u0646\u0627\u0641\u0633\u064A\u0629.",
-    criteria: "\u062A\u064F\u0645\u0646\u062D \u0644\u0644\u0645\u0642\u0627\u062A\u0644\u064A\u0646 \u0627\u0644\u0630\u064A\u0646 \u064A\u062C\u062A\u0627\u0632\u0648\u0646 \u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u0645\u0633\u062A\u0648\u064A\u0627\u062A \u0628\u0645\u0633\u062A\u0648\u0649 \u0627\u0633\u062A\u062B\u0646\u0627\u0626\u064A (High Tier 1) \u0648\u064A\u062B\u0628\u062A\u0648\u0646 \u062C\u062F\u0627\u0631\u062A\u0647\u0645 \u0641\u064A \u0627\u0644\u0645\u0628\u0627\u0631\u0632\u0627\u062A \u0627\u0644\u0645\u0639\u062A\u0645\u062F\u0629.",
+    description: "\u0623\u0628\u0637\u0627\u0644 \u0628\u0637\u0648\u0644\u0627\u062A \u0648\u0645\u0646\u0627\u0641\u0633\u0627\u062A \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0627\u0644\u0631\u0633\u0645\u064A\u0629.",
+    criteria: "\u062A\u064F\u0645\u0646\u062D \u0644\u0644\u0627\u0639\u0628\u064A\u0646 \u0627\u0644\u0641\u0627\u0626\u0632\u064A\u0646 \u0628\u0627\u0644\u0645\u0631\u0627\u0643\u0632 \u0627\u0644\u0623\u0648\u0644\u0649 \u0641\u064A \u0628\u0637\u0648\u0644\u0627\u062A \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0648\u0627\u0644\u0645\u0635\u0646\u0641\u064A\u0646 \u0643\u0640 HT1.",
     showInList: true
   },
   {
     id: "role_gladiator",
-    name: "Gladiator",
-    color: "#a855f7",
-    emoji: "\u{1F6E1}\uFE0F",
+    name: "Tier Fighter",
+    color: "#10b981",
+    emoji: "\u{1F48E}",
     order: 4,
-    description: "\u0645\u0642\u0627\u062A\u0644\u0648 \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0627\u0644\u0645\u0639\u062A\u0645\u062F\u064A\u0646 \u0648\u0627\u0644\u0645\u0634\u0627\u0631\u0643\u064A\u0646 \u0628\u0627\u0644\u0628\u0637\u0648\u0644\u0627\u062A.",
+    description: "\u0627\u0644\u0645\u0642\u0627\u062A\u0644\u0648\u0646 \u0627\u0644\u062D\u0627\u0635\u0644\u0648\u0646 \u0639\u0644\u0649 \u062A\u0642\u064A\u064A\u0645 \u0645\u0633\u062A\u0648\u0649 \u062F\u0627\u062E\u0644 \u0627\u0644\u0633\u064A\u0631\u0641\u0631.",
     criteria: "\u062A\u064F\u0645\u0646\u062D \u0644\u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0642\u0627\u062A\u0644\u064A\u0646 \u0627\u0644\u0630\u064A\u0646 \u0623\u062A\u0645\u0648\u0627 \u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0623\u0648\u0644\u064A \u0623\u0648 \u0634\u0627\u0631\u0643\u0648\u0627 \u0641\u064A \u0628\u0637\u0648\u0644\u0627\u062A \u0648\u062A\u062D\u062F\u064A\u0627\u062A \u0627\u0644\u0633\u064A\u0631\u0641\u0631.",
     showInList: true
   },
@@ -209,7 +244,10 @@ var DEFAULT_USERS = {
     bio: "Founder & Head Evaluator of \u{1D47E}\u{1D489}\u{1D48A}\u{1D495}\u{1D486} \u{1D472}\u{1D48A}\u{1D48F}\u{1D488}\u{1D485}\u{1D490}\u{1D48E}.",
     createdAt: "2026-01-01T00:00:00.000Z",
     lastLogin: "2026-10-27T10:00:00.000Z",
-    isAdmin: true
+    isAdmin: true,
+    assignedRoles: ["role_founder"],
+    tier: "HT1",
+    evaluationNotes: "\u0645\u0624\u0633\u0633 \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0648\u0645\u0642\u064A\u0645 \u0627\u0644\u0645\u0633\u062A\u0648\u064A\u0627\u062A \u0627\u0644\u0623\u0648\u0644."
   },
   "482910482910482910": {
     id: "user_vortex",
@@ -220,7 +258,10 @@ var DEFAULT_USERS = {
     bio: "Competitive duel grinder.",
     createdAt: "2026-01-15T12:00:00.000Z",
     lastLogin: "2026-10-26T18:30:00.000Z",
-    isAdmin: false
+    isAdmin: false,
+    assignedRoles: ["role_champion"],
+    tier: "HT1",
+    evaluationNotes: "\u0623\u062F\u0627\u0621 \u0645\u062A\u0645\u064A\u0632 \u0641\u064A \u0627\u0644\u0643\u0631\u064A\u0633\u062A\u0627\u0644 \u0648\u0627\u0644\u0640 Pot."
   },
   "819203810293819201": {
     id: "user_frostbyte",
@@ -231,7 +272,10 @@ var DEFAULT_USERS = {
     bio: "Shield & timing specialist.",
     createdAt: "2026-02-01T15:20:00.000Z",
     lastLogin: "2026-10-25T20:10:00.000Z",
-    isAdmin: false
+    isAdmin: false,
+    assignedRoles: ["role_tester"],
+    tier: "LT1",
+    evaluationNotes: "\u0645\u062E\u062A\u0628\u0631 \u0631\u0633\u0645\u064A \u0645\u0639\u062A\u0645\u062F \u0641\u064A \u0646\u0632\u0627\u0644\u0627\u062A \u0627\u0644\u062F\u0631\u0648\u0639."
   },
   "391029384756102938": {
     id: "user_khaos",
@@ -242,7 +286,9 @@ var DEFAULT_USERS = {
     bio: "Fast paced duelist.",
     createdAt: "2026-02-10T09:40:00.000Z",
     lastLogin: "2026-10-24T14:15:00.000Z",
-    isAdmin: false
+    isAdmin: false,
+    assignedRoles: ["role_gladiator"],
+    tier: "HT2"
   }
 };
 var DEFAULT_LEADERBOARD = [
@@ -293,9 +339,178 @@ var DEFAULT_LEADERBOARD = [
 ];
 var DatabaseManager = class {
   constructor() {
-    this.data = this.loadDatabase();
+    this.pool = null;
+    this.isInitialized = false;
+    this.data = this.loadDatabaseFromFile();
   }
-  loadDatabase() {
+  /**
+   * Initializes PostgreSQL connection, auto-creates the storage table,
+   * loads persistent state (if existing data is found), or migrates local JSON data on first run.
+   */
+  async init() {
+    if (this.isInitialized) return;
+    const connectionString = process.env.DATABASE_URL;
+    const isProduction = process.env.NODE_ENV === "production";
+    if (!connectionString) {
+      console.warn("[Database] DATABASE_URL is not configured. Running with persistent local JSON storage.");
+      console.warn("[Database] To enable PostgreSQL persistence on EthioDeploy or your production database, configure DATABASE_URL.");
+      this.isInitialized = true;
+      return;
+    }
+    try {
+      console.log("[Database] Connecting to PostgreSQL database using DATABASE_URL...");
+      const isLocalhost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+      this.pool = new Pool({
+        connectionString,
+        ssl: isLocalhost ? false : { rejectUnauthorized: false },
+        connectionTimeoutMillis: 1e4,
+        max: 10
+      });
+      const client = await this.pool.connect();
+      try {
+        console.log('[Database] Connected to PostgreSQL. Initializing table "white_kingdom_storage"...');
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS white_kingdom_storage (
+            key VARCHAR(64) PRIMARY KEY,
+            data JSONB NOT NULL,
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          );
+        `);
+        console.log('[Database] Table "white_kingdom_storage" verified and ready in PostgreSQL.');
+        const res = await client.query(
+          `SELECT data FROM white_kingdom_storage WHERE key = 'white_kingdom_db' LIMIT 1;`
+        );
+        if (res.rows.length > 0 && res.rows[0].data) {
+          console.log('[Database] Persistent record "white_kingdom_db" found in PostgreSQL. Loading state into memory...');
+          this.data = this.sanitizeSchema(res.rows[0].data);
+          this.saveDatabaseSync(this.data);
+          console.log(`[Database] Persistent state loaded successfully from PostgreSQL (${Object.keys(this.data.users).length} profiles, ${this.data.leaderboard.length} leaderboard players).`);
+        } else {
+          const jsonFileExists = fs.existsSync(DB_FILE);
+          if (jsonFileExists) {
+            console.log("[Database] PostgreSQL storage is empty. Migrating existing local JSON data into PostgreSQL...");
+          } else {
+            console.log("[Database] PostgreSQL storage is empty and no local JSON exists. Initializing with default community data...");
+          }
+          const currentData = this.data;
+          await client.query(
+            `INSERT INTO white_kingdom_storage (key, data, updated_at)
+             VALUES ('white_kingdom_db', $1, NOW())
+             ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();`,
+            [JSON.stringify(currentData)]
+          );
+          console.log('[Database] Initial data written to PostgreSQL "white_kingdom_storage" successfully.');
+        }
+        this.isInitialized = true;
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error("[Database ERROR] PostgreSQL connection/initialization error:", err?.message || err);
+      console.warn("[Database] Continuing with persistent local JSON file storage fallback.");
+      this.pool = null;
+      this.isInitialized = true;
+    }
+  }
+  /**
+   * Persists current application state to PostgreSQL and local JSON backup file.
+   * Throws if PostgreSQL query fails so caller knows if database write succeeded.
+   */
+  async save() {
+    this.saveDatabaseSync(this.data);
+    if (this.pool) {
+      try {
+        await this.pool.query(
+          `INSERT INTO white_kingdom_storage (key, data, updated_at)
+           VALUES ('white_kingdom_db', $1, NOW())
+           ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();`,
+          [JSON.stringify(this.data)]
+        );
+      } catch (err) {
+        console.error("[Database] Failed to save state to PostgreSQL:", err?.message || err);
+        throw new Error(`Database persistence failure: ${err?.message || "PostgreSQL write error"}`);
+      }
+    }
+  }
+  sanitizeSchema(parsed) {
+    const settings = {
+      serverName: parsed?.settings?.serverName || DEFAULT_SETTINGS.serverName,
+      logoUrl: parsed?.settings?.logoUrl || DEFAULT_SETTINGS.logoUrl,
+      youtubeUrl: parsed?.settings?.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
+      discordInviteUrl: parsed?.settings?.discordInviteUrl || DEFAULT_SETTINGS.discordInviteUrl,
+      ownerDiscordId: parsed?.settings?.ownerDiscordId || DEFAULT_SETTINGS.ownerDiscordId,
+      ownerName: parsed?.settings?.ownerName || DEFAULT_SETTINGS.ownerName,
+      ownerAvatar: parsed?.settings?.ownerAvatar || DEFAULT_SETTINGS.ownerAvatar,
+      ownerTag: parsed?.settings?.ownerTag || DEFAULT_SETTINGS.ownerTag,
+      aboutContent: parsed?.settings?.aboutContent || DEFAULT_SETTINGS.aboutContent,
+      tierTestContent: parsed?.settings?.tierTestContent || DEFAULT_SETTINGS.tierTestContent,
+      newsContent: parsed?.settings?.newsContent || DEFAULT_SETTINGS.newsContent,
+      welcomeBadgeText: parsed?.settings?.welcomeBadgeText || DEFAULT_SETTINGS.welcomeBadgeText
+    };
+    const testServers = Array.isArray(parsed?.testServers) && parsed.testServers.length > 0 ? parsed.testServers : DEFAULT_SERVERS;
+    let leaderboard = Array.isArray(parsed?.leaderboard) && parsed.leaderboard.length > 0 ? parsed.leaderboard : [];
+    const newsArticles = Array.isArray(parsed?.newsArticles) && parsed.newsArticles.length > 0 ? parsed.newsArticles : DEFAULT_NEWS;
+    const roles = Array.isArray(parsed?.roles) && parsed.roles.length > 0 ? parsed.roles : DEFAULT_ROLES;
+    const tiers = Array.isArray(parsed?.tiers) && parsed.tiers.length > 0 ? parsed.tiers : WHITE_KINGDOM_TIERS;
+    if (leaderboard.length === 0 && parsed?.tierTests) {
+      const testRecords = Object.values(parsed.tierTests);
+      const seen = /* @__PURE__ */ new Set();
+      for (const test of testRecords) {
+        if (!seen.has(test.discordId)) {
+          seen.add(test.discordId);
+          const user = parsed.users && parsed.users[test.discordId] || null;
+          leaderboard.push({
+            id: `lead_${test.id || Date.now()}`,
+            minecraftName: test.minecraftName || `Gladiator_${test.discordId.slice(-4)}`,
+            discordId: test.discordId,
+            discordDisplayName: user?.username || user?.globalName || `Discord_${test.discordId.slice(-4)}`,
+            discordAvatar: resolveDiscordAvatar(test.discordId, user?.avatar),
+            tierName: test.tier || "HT1",
+            tierRank: test.tierRank || getTierRank(test.tier || "HT1", tiers),
+            createdAt: test.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+            updatedAt: test.updatedAt || (/* @__PURE__ */ new Date()).toISOString()
+          });
+        }
+      }
+    }
+    if (leaderboard.length === 0) {
+      leaderboard = DEFAULT_LEADERBOARD;
+    }
+    const rawUsers = parsed?.users || DEFAULT_USERS;
+    const sanitizedUsers = {};
+    for (const [id, u] of Object.entries(rawUsers)) {
+      sanitizedUsers[id] = {
+        id: u?.id || `user_${id}`,
+        discordId: u?.discordId || id,
+        username: u?.username || `Player_${id.slice(-4)}`,
+        globalName: u?.globalName,
+        avatar: u?.avatar || resolveDiscordAvatar(id),
+        discriminator: u?.discriminator || "0",
+        email: u?.email,
+        bio: u?.bio || "",
+        createdAt: u?.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+        lastLogin: u?.lastLogin,
+        isAdmin: !!u?.isAdmin,
+        assignedRoles: Array.isArray(u?.assignedRoles) ? u.assignedRoles : [],
+        tier: u?.tier ? String(u.tier).trim().toUpperCase() : void 0,
+        evaluationNotes: u?.evaluationNotes ? String(u.evaluationNotes) : void 0,
+        evaluatedAt: u?.evaluatedAt ? String(u.evaluatedAt) : void 0,
+        evaluatorName: u?.evaluatorName ? String(u.evaluatorName) : void 0,
+        isPreCreated: !!u?.isPreCreated
+      };
+    }
+    return {
+      users: sanitizedUsers,
+      adminDiscordIds: parsed?.adminDiscordIds || ["1324725244073873539", "184719284719284719"],
+      settings,
+      testServers,
+      leaderboard,
+      newsArticles,
+      roles,
+      tiers
+    };
+  }
+  loadDatabaseFromFile() {
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -303,57 +518,7 @@ var DatabaseManager = class {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, "utf-8");
         const parsed = JSON.parse(raw);
-        const settings = {
-          serverName: parsed.settings?.serverName || DEFAULT_SETTINGS.serverName,
-          logoUrl: parsed.settings?.logoUrl || DEFAULT_SETTINGS.logoUrl,
-          youtubeUrl: parsed.settings?.youtubeUrl || DEFAULT_SETTINGS.youtubeUrl,
-          discordInviteUrl: parsed.settings?.discordInviteUrl || DEFAULT_SETTINGS.discordInviteUrl,
-          ownerDiscordId: parsed.settings?.ownerDiscordId || DEFAULT_SETTINGS.ownerDiscordId,
-          ownerName: parsed.settings?.ownerName || DEFAULT_SETTINGS.ownerName,
-          ownerAvatar: parsed.settings?.ownerAvatar || DEFAULT_SETTINGS.ownerAvatar,
-          ownerTag: parsed.settings?.ownerTag || DEFAULT_SETTINGS.ownerTag,
-          aboutContent: parsed.settings?.aboutContent || DEFAULT_SETTINGS.aboutContent,
-          tierTestContent: parsed.settings?.tierTestContent || DEFAULT_SETTINGS.tierTestContent,
-          newsContent: parsed.settings?.newsContent || DEFAULT_SETTINGS.newsContent,
-          welcomeBadgeText: parsed.settings?.welcomeBadgeText || DEFAULT_SETTINGS.welcomeBadgeText
-        };
-        const testServers = Array.isArray(parsed.testServers) && parsed.testServers.length > 0 ? parsed.testServers : DEFAULT_SERVERS;
-        let leaderboard = Array.isArray(parsed.leaderboard) && parsed.leaderboard.length > 0 ? parsed.leaderboard : [];
-        const newsArticles = Array.isArray(parsed.newsArticles) && parsed.newsArticles.length > 0 ? parsed.newsArticles : DEFAULT_NEWS;
-        const roles = Array.isArray(parsed.roles) && parsed.roles.length > 0 ? parsed.roles : DEFAULT_ROLES;
-        if (leaderboard.length === 0 && parsed.tierTests) {
-          const testRecords = Object.values(parsed.tierTests);
-          const seen = /* @__PURE__ */ new Set();
-          for (const test of testRecords) {
-            if (!seen.has(test.discordId)) {
-              seen.add(test.discordId);
-              const user = parsed.users && parsed.users[test.discordId] || null;
-              leaderboard.push({
-                id: `lead_${test.id || Date.now()}`,
-                minecraftName: test.minecraftName || `Gladiator_${test.discordId.slice(-4)}`,
-                discordId: test.discordId,
-                discordDisplayName: user?.username || user?.globalName || `Discord_${test.discordId.slice(-4)}`,
-                discordAvatar: resolveDiscordAvatar(test.discordId, user?.avatar),
-                tierName: test.tier || "HT1",
-                tierRank: test.tierRank || getTierRank(test.tier || "HT1"),
-                createdAt: test.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
-                updatedAt: test.updatedAt || (/* @__PURE__ */ new Date()).toISOString()
-              });
-            }
-          }
-        }
-        if (leaderboard.length === 0) {
-          leaderboard = DEFAULT_LEADERBOARD;
-        }
-        return {
-          users: parsed.users || DEFAULT_USERS,
-          adminDiscordIds: parsed.adminDiscordIds || ["184719284719284719"],
-          settings,
-          testServers,
-          leaderboard,
-          newsArticles,
-          roles
-        };
+        return this.sanitizeSchema(parsed);
       }
     } catch (err) {
       console.error("Failed to load database file, using defaults:", err);
@@ -365,7 +530,8 @@ var DatabaseManager = class {
       testServers: DEFAULT_SERVERS,
       leaderboard: DEFAULT_LEADERBOARD,
       newsArticles: DEFAULT_NEWS,
-      roles: DEFAULT_ROLES
+      roles: DEFAULT_ROLES,
+      tiers: WHITE_KINGDOM_TIERS
     };
     this.saveDatabaseSync(initial);
     return initial;
@@ -379,29 +545,26 @@ var DatabaseManager = class {
       fs.writeFileSync(tmpFile, JSON.stringify(data, null, 2), "utf-8");
       fs.renameSync(tmpFile, DB_FILE);
     } catch (err) {
-      console.error("Error writing to database:", err);
+      console.error("Error writing to database backup file:", err);
     }
-  }
-  save() {
-    this.saveDatabaseSync(this.data);
   }
   // --- Settings ---
   getSettings() {
     return this.data.settings;
   }
-  updateSettings(partial) {
+  async updateSettings(partial) {
     this.data.settings = {
       ...this.data.settings,
       ...partial
     };
-    this.save();
+    await this.save();
     return this.data.settings;
   }
   // --- Test Servers ---
   getTestServers() {
     return [...this.data.testServers].sort((a, b) => a.order - b.order);
   }
-  addTestServer(server) {
+  async addTestServer(server) {
     const id = `srv_${Date.now()}`;
     const newServer = {
       ...server,
@@ -409,10 +572,10 @@ var DatabaseManager = class {
       order: server.order ?? this.data.testServers.length + 1
     };
     this.data.testServers.push(newServer);
-    this.save();
+    await this.save();
     return newServer;
   }
-  updateTestServer(id, updates) {
+  async updateTestServer(id, updates) {
     const idx = this.data.testServers.findIndex((s) => s.id === id);
     if (idx === -1) return null;
     this.data.testServers[idx] = {
@@ -420,14 +583,14 @@ var DatabaseManager = class {
       ...updates,
       id
     };
-    this.save();
+    await this.save();
     return this.data.testServers[idx];
   }
-  deleteTestServer(id) {
+  async deleteTestServer(id) {
     const initialLen = this.data.testServers.length;
     this.data.testServers = this.data.testServers.filter((s) => s.id !== id);
     if (this.data.testServers.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
@@ -437,20 +600,83 @@ var DatabaseManager = class {
     return [...this.data.leaderboard].sort((a, b) => b.tierRank - a.tierRank);
   }
   getLeaderboardPublic() {
-    return formatPublicLeaderboard(this.data.leaderboard);
+    return formatPublicLeaderboard(this.data.leaderboard, this.data.tiers);
   }
-  addLeaderboardPlayer(player) {
+  // --- Tiers Management ---
+  getTiers() {
+    return [...this.data.tiers].sort((a, b) => b.rank - a.rank);
+  }
+  async addTier(tier) {
+    const cleanName = tier.name.trim().toUpperCase();
+    const existingIdx = this.data.tiers.findIndex((t) => t.name.toUpperCase() === cleanName);
+    const calculatedRank = tier.rank !== void 0 ? tier.rank : getTierRank(cleanName, this.data.tiers);
+    const newTier = {
+      name: cleanName,
+      color: tier.color.trim() || "#38bdf8",
+      label: tier.label?.trim() || cleanName,
+      rank: calculatedRank > 0 ? calculatedRank : this.data.tiers.length ? Math.min(...this.data.tiers.map((t) => t.rank)) - 1 : 1
+    };
+    if (existingIdx !== -1) {
+      this.data.tiers[existingIdx] = newTier;
+    } else {
+      this.data.tiers.push(newTier);
+    }
+    await this.save();
+    return newTier;
+  }
+  async updateTier(name, updates) {
+    const cleanName = name.trim().toUpperCase();
+    const idx = this.data.tiers.findIndex((t) => t.name.toUpperCase() === cleanName);
+    if (idx === -1) return null;
+    const existing = this.data.tiers[idx];
+    const newName = updates.name ? updates.name.trim().toUpperCase() : existing.name;
+    const newColor = updates.color ? updates.color.trim() : existing.color;
+    const newLabel = updates.label !== void 0 ? updates.label.trim() : existing.label;
+    const newRank = updates.rank !== void 0 ? updates.rank : existing.rank;
+    this.data.tiers[idx] = {
+      name: newName,
+      color: newColor,
+      label: newLabel,
+      rank: newRank
+    };
+    for (const p of this.data.leaderboard) {
+      if (p.tierName.toUpperCase() === cleanName) {
+        if (newName !== cleanName) p.tierName = newName;
+        p.tierRank = newRank;
+      }
+    }
+    await this.save();
+    return this.data.tiers[idx];
+  }
+  async deleteTier(name) {
+    const cleanName = name.trim().toUpperCase();
+    const initialLen = this.data.tiers.length;
+    this.data.tiers = this.data.tiers.filter((t) => t.name.toUpperCase() !== cleanName);
+    if (this.data.tiers.length !== initialLen) {
+      await this.save();
+      return true;
+    }
+    return false;
+  }
+  async resetTiers() {
+    this.data.tiers = [...WHITE_KINGDOM_TIERS];
+    await this.save();
+    return this.getTiers();
+  }
+  async addLeaderboardPlayer(player) {
     const id = `player_${Date.now()}`;
     const user = this.data.users[player.discordId];
     const tierName = player.tierName.trim().toUpperCase() || "HT1";
-    const tierRank = getTierRank(tierName);
+    const tierRank = getTierRank(tierName, this.data.tiers);
     const resolvedAvatar = player.discordAvatar || user?.avatar || resolveDiscordAvatar(player.discordId);
     const resolvedName = player.discordDisplayName || (user?.globalName || user?.username) || `Discord_${player.discordId.slice(-4)}`;
+    const resolvedUsername = player.discordUsername || user?.username || void 0;
     const newPlayer = {
       id,
       minecraftName: player.minecraftName.trim(),
       discordId: player.discordId.trim(),
       discordDisplayName: resolvedName,
+      discordUsername: resolvedUsername,
       discordAvatar: resolvedAvatar,
       tierName,
       tierRank,
@@ -460,15 +686,15 @@ var DatabaseManager = class {
       updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     this.data.leaderboard.push(newPlayer);
-    this.save();
+    await this.save();
     return newPlayer;
   }
-  updateLeaderboardPlayer(id, updates) {
+  async updateLeaderboardPlayer(id, updates) {
     const idx = this.data.leaderboard.findIndex((p) => p.id === id);
     if (idx === -1) return null;
     const existing = this.data.leaderboard[idx];
     const tierName = (updates.tierName || existing.tierName).trim().toUpperCase();
-    const tierRank = updates.tierRank || getTierRank(tierName);
+    const tierRank = updates.tierRank || getTierRank(tierName, this.data.tiers);
     this.data.leaderboard[idx] = {
       ...existing,
       ...updates,
@@ -479,10 +705,10 @@ var DatabaseManager = class {
       notes: updates.notes !== void 0 ? updates.notes : existing.notes,
       updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     };
-    this.save();
+    await this.save();
     return this.data.leaderboard[idx];
   }
-  deleteLeaderboardPlayer(id) {
+  async deleteLeaderboardPlayer(id) {
     const player = this.data.leaderboard.find((p) => p.id === id);
     const initialLen = this.data.leaderboard.length;
     this.data.leaderboard = this.data.leaderboard.filter((p) => p.id !== id);
@@ -495,7 +721,7 @@ var DatabaseManager = class {
       }
     }
     if (this.data.leaderboard.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
@@ -504,10 +730,16 @@ var DatabaseManager = class {
   getUser(discordId) {
     return this.data.users[discordId];
   }
+  getProfile(discordId) {
+    return this.data.users[discordId];
+  }
   getAllUsers() {
     return Object.values(this.data.users);
   }
-  upsertUser(profile) {
+  getAllProfiles() {
+    return Object.values(this.data.users);
+  }
+  applyUpsertUser(profile) {
     const existing = this.data.users[profile.discordId];
     const isAdmin = this.isAdmin(profile.discordId);
     const updated = {
@@ -521,17 +753,89 @@ var DatabaseManager = class {
       bio: profile.bio ?? existing?.bio ?? "",
       createdAt: existing?.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
       lastLogin: (/* @__PURE__ */ new Date()).toISOString(),
-      isAdmin
+      isAdmin,
+      assignedRoles: existing?.assignedRoles || profile.assignedRoles || [],
+      tier: existing?.tier || profile.tier,
+      evaluationNotes: existing?.evaluationNotes || profile.evaluationNotes,
+      evaluatedAt: existing?.evaluatedAt || profile.evaluatedAt,
+      evaluatorName: existing?.evaluatorName || profile.evaluatorName,
+      isPreCreated: false
+      // User has now actively authenticated!
     };
     this.data.users[profile.discordId] = updated;
     for (const entry of this.data.leaderboard) {
       if (entry.discordId === profile.discordId) {
         if (updated.username) entry.discordDisplayName = updated.globalName || updated.username;
         if (updated.avatar) entry.discordAvatar = updated.avatar;
+        if (updated.tier) {
+          entry.tierName = updated.tier;
+          entry.tierRank = getTierRank(updated.tier, this.data.tiers);
+        }
       }
     }
-    this.save();
     return updated;
+  }
+  async upsertUser(profile) {
+    const updated = this.applyUpsertUser(profile);
+    await this.save();
+    return updated;
+  }
+  upsertUserSync(profile) {
+    const updated = this.applyUpsertUser(profile);
+    this.save().catch((err) => {
+      console.error("[Database] Background save error on upsertUserSync:", err);
+    });
+    return updated;
+  }
+  /**
+   * Administrator-controlled profile creation / editing using Discord user ID.
+   * A player is NOT required to register or log in first.
+   */
+  async upsertAdminProfile(params) {
+    const cleanId = params.discordId.trim();
+    const existing = this.data.users[cleanId];
+    const isAdmin = this.isAdmin(cleanId);
+    const updated = {
+      id: existing?.id || `user_${cleanId}`,
+      discordId: cleanId,
+      username: params.username?.trim() || existing?.username || `Player_${cleanId.slice(-4)}`,
+      globalName: params.globalName?.trim() || existing?.globalName || params.username?.trim() || `Player_${cleanId.slice(-4)}`,
+      avatar: params.avatar?.trim() || existing?.avatar || resolveDiscordAvatar(cleanId),
+      discriminator: existing?.discriminator || "0",
+      email: existing?.email,
+      bio: existing?.bio || "",
+      createdAt: existing?.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+      lastLogin: existing?.lastLogin,
+      isAdmin,
+      assignedRoles: Array.isArray(params.assignedRoles) ? params.assignedRoles : existing?.assignedRoles || [],
+      tier: params.tier !== void 0 ? params.tier?.trim().toUpperCase() || void 0 : existing?.tier,
+      evaluationNotes: params.evaluationNotes !== void 0 ? params.evaluationNotes.trim() : existing?.evaluationNotes,
+      evaluatedAt: params.evaluationNotes !== void 0 ? (/* @__PURE__ */ new Date()).toISOString() : existing?.evaluatedAt,
+      evaluatorName: params.evaluatorName || existing?.evaluatorName,
+      isPreCreated: existing ? existing.isPreCreated : true
+    };
+    this.data.users[cleanId] = updated;
+    for (const entry of this.data.leaderboard) {
+      if (entry.discordId === cleanId) {
+        if (updated.username) entry.discordDisplayName = updated.globalName || updated.username;
+        if (updated.avatar) entry.discordAvatar = updated.avatar;
+        if (updated.tier) {
+          entry.tierName = updated.tier;
+          entry.tierRank = getTierRank(updated.tier, this.data.tiers);
+        }
+      }
+    }
+    await this.save();
+    return updated;
+  }
+  async deleteProfile(discordId) {
+    const cleanId = discordId.trim();
+    if (this.data.users[cleanId]) {
+      delete this.data.users[cleanId];
+      await this.save();
+      return true;
+    }
+    return false;
   }
   isAdmin(discordId) {
     if (!discordId) return false;
@@ -544,7 +848,7 @@ var DatabaseManager = class {
     if (this.data.adminDiscordIds.map((id) => String(id).trim()).includes(cleanId)) return true;
     return !!this.data.users[cleanId]?.isAdmin;
   }
-  setAdminStatus(discordId, status) {
+  async setAdminStatus(discordId, status) {
     if (status) {
       if (!this.data.adminDiscordIds.includes(discordId)) {
         this.data.adminDiscordIds.push(discordId);
@@ -555,13 +859,13 @@ var DatabaseManager = class {
     if (this.data.users[discordId]) {
       this.data.users[discordId].isAdmin = status;
     }
-    this.save();
+    await this.save();
   }
   // --- Server Roles (for Discord-like role mentions & badges) ---
   getRoles() {
     return [...this.data.roles].sort((a, b) => (a.order || 0) - (b.order || 0));
   }
-  addRole(role) {
+  async addRole(role) {
     const id = `role_${Date.now()}`;
     const newRole = {
       ...role,
@@ -575,10 +879,10 @@ var DatabaseManager = class {
       showInList: role.showInList !== false
     };
     this.data.roles.push(newRole);
-    this.save();
+    await this.save();
     return newRole;
   }
-  updateRole(id, updates) {
+  async updateRole(id, updates) {
     const idx = this.data.roles.findIndex((r) => r.id === id);
     if (idx === -1) return null;
     this.data.roles[idx] = {
@@ -586,14 +890,14 @@ var DatabaseManager = class {
       ...updates,
       id
     };
-    this.save();
+    await this.save();
     return this.data.roles[idx];
   }
-  deleteRole(id) {
+  async deleteRole(id) {
     const initialLen = this.data.roles.length;
     this.data.roles = this.data.roles.filter((r) => r.id !== id);
     if (this.data.roles.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
@@ -606,7 +910,7 @@ var DatabaseManager = class {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }
-  addNewsArticle(article) {
+  async addNewsArticle(article) {
     const id = `news_${Date.now()}`;
     const newArticle = {
       id,
@@ -619,10 +923,10 @@ var DatabaseManager = class {
       updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     this.data.newsArticles.unshift(newArticle);
-    this.save();
+    await this.save();
     return newArticle;
   }
-  updateNewsArticle(id, updates) {
+  async updateNewsArticle(id, updates) {
     const idx = this.data.newsArticles.findIndex((a) => a.id === id);
     if (idx === -1) return null;
     this.data.newsArticles[idx] = {
@@ -631,17 +935,23 @@ var DatabaseManager = class {
       id,
       updatedAt: (/* @__PURE__ */ new Date()).toISOString()
     };
-    this.save();
+    await this.save();
     return this.data.newsArticles[idx];
   }
-  deleteNewsArticle(id) {
+  async deleteNewsArticle(id) {
     const initialLen = this.data.newsArticles.length;
     this.data.newsArticles = this.data.newsArticles.filter((a) => a.id !== id);
     if (this.data.newsArticles.length !== initialLen) {
-      this.save();
+      await this.save();
       return true;
     }
     return false;
+  }
+  async close() {
+    if (this.pool) {
+      await this.pool.end();
+      this.pool = null;
+    }
   }
 };
 var db = new DatabaseManager();
@@ -684,7 +994,7 @@ function getSessionUser(req) {
   if (!discordId) return null;
   const user = db.getUser(discordId);
   if (!user) {
-    return db.upsertUser({ discordId });
+    return db.upsertUserSync({ discordId });
   }
   user.isAdmin = db.isAdmin(discordId);
   return user;
@@ -808,13 +1118,19 @@ apiRouter.get("/public-data", (req, res) => {
   const leaderboard = db.getLeaderboardPublic();
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
+  const tiers = db.getTiers();
   res.json({
     settings,
     testServers,
     leaderboard,
     newsArticles,
-    roles
+    roles,
+    tiers
   });
+});
+apiRouter.get("/tiers", (req, res) => {
+  const tiers = db.getTiers();
+  res.json({ tiers });
 });
 apiRouter.get("/news", (req, res) => {
   const newsArticles = db.getNewsArticles();
@@ -951,7 +1267,7 @@ async function handleDiscordCallback(req, res) {
       const defaultIndex = (BigInt(discordUser.id) >> 22n) % 6n;
       avatarUrl = `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
     }
-    const user = db.upsertUser({
+    const user = await db.upsertUser({
       discordId: discordUser.id,
       username: discordUser.username,
       globalName: discordUser.global_name,
@@ -960,7 +1276,7 @@ async function handleDiscordCallback(req, res) {
       email: discordUser.email
     });
     if (db.isAdmin(user.discordId)) {
-      db.updateSettings({
+      await db.updateSettings({
         ownerDiscordId: user.discordId,
         ownerName: user.globalName || user.username,
         ownerAvatar: user.avatar,
@@ -1012,7 +1328,7 @@ async function handleDiscordCallback(req, res) {
     `);
   }
 }
-apiRouter.post("/auth/dev-login", (req, res) => {
+apiRouter.post("/auth/dev-login", async (req, res) => {
   const { discordId, username, asAdmin } = req.body;
   const validation = validateDiscordId(discordId);
   if (!validation.valid) {
@@ -1020,14 +1336,14 @@ apiRouter.post("/auth/dev-login", (req, res) => {
     return;
   }
   const defaultAvatar = resolveDiscordAvatar(discordId.trim());
-  const user = db.upsertUser({
+  const user = await db.upsertUser({
     discordId: discordId.trim(),
     username: username?.trim() || `Player_${discordId.slice(-4)}`,
     globalName: username?.trim() || `Player_${discordId.slice(-4)}`,
     avatar: defaultAvatar
   });
   if (asAdmin) {
-    db.setAdminStatus(user.discordId, true);
+    await db.setAdminStatus(user.discordId, true);
     user.isAdmin = true;
   }
   const token = createSessionToken(user.discordId);
@@ -1053,6 +1369,22 @@ apiRouter.get("/auth/session", (req, res) => {
     user
   });
 });
+apiRouter.get("/user/my-profile", (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "\u063A\u064A\u0631 \u0645\u0635\u0631\u062D. \u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0628\u062D\u0633\u0627\u0628 \u062F\u064A\u0633\u0643\u0648\u0631\u062F." });
+    return;
+  }
+  const allRoles = db.getRoles();
+  const allTiers = db.getTiers();
+  const resolvedRoles = resolveUserRoles(user.assignedRoles, allRoles);
+  const tierDef = getTierDefinition(user.tier, allTiers);
+  res.json({
+    profile: user,
+    roles: resolvedRoles,
+    tierDefinition: tierDef
+  });
+});
 apiRouter.get("/admin/data", requireAdmin, (req, res) => {
   const settings = db.getSettings();
   const testServers = db.getTestServers();
@@ -1060,16 +1392,18 @@ apiRouter.get("/admin/data", requireAdmin, (req, res) => {
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
   const users = db.getAllUsers();
+  const tiers = db.getTiers();
   res.json({
     settings,
     testServers,
     leaderboard,
     newsArticles,
     roles,
-    users
+    users,
+    tiers
   });
 });
-apiRouter.patch("/admin/settings", requireAdmin, (req, res) => {
+apiRouter.patch("/admin/settings", requireAdmin, async (req, res) => {
   const {
     serverName,
     logoUrl,
@@ -1106,16 +1440,16 @@ apiRouter.patch("/admin/settings", requireAdmin, (req, res) => {
   if (typeof tierTestContent === "string") updates.tierTestContent = tierTestContent;
   if (typeof newsContent === "string") updates.newsContent = newsContent;
   if (typeof welcomeBadgeText === "string") updates.welcomeBadgeText = welcomeBadgeText.trim();
-  const updatedSettings = db.updateSettings(updates);
+  const updatedSettings = await db.updateSettings(updates);
   res.json({ success: true, settings: updatedSettings });
 });
-apiRouter.post("/admin/servers", requireAdmin, (req, res) => {
+apiRouter.post("/admin/servers", requireAdmin, async (req, res) => {
   const { name, info, imageUrl, order } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     res.status(400).json({ error: "\u0627\u0633\u0645 \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0645\u0637\u0644\u0648\u0628." });
     return;
   }
-  const newServer = db.addTestServer({
+  const newServer = await db.addTestServer({
     name: name.trim(),
     info: (info || "").trim(),
     imageUrl: imageUrl ? String(imageUrl).trim() : void 0,
@@ -1123,10 +1457,10 @@ apiRouter.post("/admin/servers", requireAdmin, (req, res) => {
   });
   res.status(201).json({ success: true, server: newServer });
 });
-apiRouter.put("/admin/servers/:id", requireAdmin, (req, res) => {
+apiRouter.put("/admin/servers/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, info, imageUrl, order } = req.body;
-  const updated = db.updateTestServer(id, {
+  const updated = await db.updateTestServer(id, {
     ...name !== void 0 ? { name: String(name).trim() } : {},
     ...info !== void 0 ? { info: String(info).trim() } : {},
     ...imageUrl !== void 0 ? { imageUrl: String(imageUrl).trim() } : {},
@@ -1138,17 +1472,17 @@ apiRouter.put("/admin/servers/:id", requireAdmin, (req, res) => {
   }
   res.json({ success: true, server: updated });
 });
-apiRouter.delete("/admin/servers/:id", requireAdmin, (req, res) => {
+apiRouter.delete("/admin/servers/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const deleted = db.deleteTestServer(id);
+  const deleted = await db.deleteTestServer(id);
   if (!deleted) {
     res.status(404).json({ error: "\u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
     return;
   }
   res.json({ success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0628\u0646\u062C\u0627\u062D." });
 });
-apiRouter.post("/admin/leaderboard", requireAdmin, (req, res) => {
-  const { minecraftName, discordId, discordDisplayName, discordAvatar, tierName, gamesPlayed, notes } = req.body;
+apiRouter.post("/admin/leaderboard", requireAdmin, async (req, res) => {
+  const { minecraftName, discordId, discordDisplayName, discordUsername, discordAvatar, tierName, gamesPlayed, notes } = req.body;
   if (!minecraftName || typeof minecraftName !== "string" || !minecraftName.trim()) {
     res.status(400).json({ error: "\u0627\u0633\u0645 \u0627\u0644\u0644\u0627\u0639\u0628 \u0641\u064A \u0645\u0627\u064A\u0646 \u0643\u0631\u0627\u0641\u062A (Minecraft Username) \u0645\u0637\u0644\u0648\u0628." });
     return;
@@ -1159,10 +1493,11 @@ apiRouter.post("/admin/leaderboard", requireAdmin, (req, res) => {
     return;
   }
   const cleanTier = (tierName || "HT1").trim().toUpperCase();
-  const newPlayer = db.addLeaderboardPlayer({
+  const newPlayer = await db.addLeaderboardPlayer({
     minecraftName: minecraftName.trim(),
     discordId: discordId.trim(),
     discordDisplayName: discordDisplayName ? String(discordDisplayName).trim() : void 0,
+    discordUsername: discordUsername ? String(discordUsername).trim() : void 0,
     discordAvatar: discordAvatar ? String(discordAvatar).trim() : void 0,
     tierName: cleanTier,
     gamesPlayed: Array.isArray(gamesPlayed) ? gamesPlayed : [],
@@ -1170,9 +1505,9 @@ apiRouter.post("/admin/leaderboard", requireAdmin, (req, res) => {
   });
   res.status(201).json({ success: true, player: newPlayer });
 });
-apiRouter.put("/admin/leaderboard/:id", requireAdmin, (req, res) => {
+apiRouter.put("/admin/leaderboard/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { minecraftName, discordId, discordDisplayName, discordAvatar, tierName, gamesPlayed, notes } = req.body;
+  const { minecraftName, discordId, discordDisplayName, discordUsername, discordAvatar, tierName, gamesPlayed, notes } = req.body;
   const updates = {};
   if (minecraftName !== void 0) {
     if (!String(minecraftName).trim()) {
@@ -1192,6 +1527,9 @@ apiRouter.put("/admin/leaderboard/:id", requireAdmin, (req, res) => {
   if (discordDisplayName !== void 0) {
     updates.discordDisplayName = String(discordDisplayName).trim();
   }
+  if (discordUsername !== void 0) {
+    updates.discordUsername = String(discordUsername).trim();
+  }
   if (discordAvatar !== void 0) {
     updates.discordAvatar = String(discordAvatar).trim();
   }
@@ -1205,16 +1543,16 @@ apiRouter.put("/admin/leaderboard/:id", requireAdmin, (req, res) => {
   if (notes !== void 0) {
     updates.notes = String(notes).trim();
   }
-  const updated = db.updateLeaderboardPlayer(id, updates);
+  const updated = await db.updateLeaderboardPlayer(id, updates);
   if (!updated) {
     res.status(404).json({ error: "\u0627\u0644\u0644\u0627\u0639\u0628 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0644\u0648\u062D\u0629 \u0627\u0644\u0635\u062F\u0627\u0631\u0629." });
     return;
   }
   res.json({ success: true, player: updated });
 });
-apiRouter.delete("/admin/leaderboard/:id", requireAdmin, (req, res) => {
+apiRouter.delete("/admin/leaderboard/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const deleted = db.deleteLeaderboardPlayer(id);
+  const deleted = await db.deleteLeaderboardPlayer(id);
   if (!deleted) {
     res.status(404).json({ error: "Leaderboard entry not found." });
     return;
@@ -1315,13 +1653,13 @@ apiRouter.get("/admin/discord-lookup/:discordId", requireAdmin, async (req, res)
     avatar: fallbackAvatar
   });
 });
-apiRouter.post("/admin/roles", requireAdmin, (req, res) => {
+apiRouter.post("/admin/roles", requireAdmin, async (req, res) => {
   const { name, color, emoji, order, description, criteria, showInList } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     res.status(400).json({ error: "\u0627\u0633\u0645 \u0627\u0644\u0631\u0648\u0644 \u0645\u0637\u0644\u0648\u0628." });
     return;
   }
-  const newRole = db.addRole({
+  const newRole = await db.addRole({
     name: name.trim(),
     color: color ? String(color).trim() : "#00e5ff",
     emoji: emoji ? String(emoji).trim() : "\u{1F6E1}\uFE0F",
@@ -1332,10 +1670,10 @@ apiRouter.post("/admin/roles", requireAdmin, (req, res) => {
   });
   res.status(201).json({ success: true, role: newRole });
 });
-apiRouter.put("/admin/roles/:id", requireAdmin, (req, res) => {
+apiRouter.put("/admin/roles/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, color, emoji, order, description, criteria, showInList } = req.body;
-  const updated = db.updateRole(id, {
+  const updated = await db.updateRole(id, {
     ...name !== void 0 ? { name: String(name).trim() } : {},
     ...color !== void 0 ? { color: String(color).trim() } : {},
     ...emoji !== void 0 ? { emoji: String(emoji).trim() } : {},
@@ -1350,16 +1688,16 @@ apiRouter.put("/admin/roles/:id", requireAdmin, (req, res) => {
   }
   res.json({ success: true, role: updated });
 });
-apiRouter.delete("/admin/roles/:id", requireAdmin, (req, res) => {
+apiRouter.delete("/admin/roles/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const deleted = db.deleteRole(id);
+  const deleted = await db.deleteRole(id);
   if (!deleted) {
     res.status(404).json({ error: "\u0627\u0644\u0631\u0648\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
     return;
   }
   res.json({ success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0631\u0648\u0644 \u0628\u0646\u062C\u0627\u062D." });
 });
-apiRouter.post("/admin/news", requireAdmin, (req, res) => {
+apiRouter.post("/admin/news", requireAdmin, async (req, res) => {
   const { title, content, category, imageUrl, pinned } = req.body;
   if (!title || typeof title !== "string" || !title.trim()) {
     res.status(400).json({ error: "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062E\u0628\u0631 \u0645\u0637\u0644\u0648\u0628." });
@@ -1369,7 +1707,7 @@ apiRouter.post("/admin/news", requireAdmin, (req, res) => {
     res.status(400).json({ error: "\u0645\u062D\u062A\u0648\u0649 \u0627\u0644\u062E\u0628\u0631 \u0645\u0637\u0644\u0648\u0628." });
     return;
   }
-  const newArticle = db.addNewsArticle({
+  const newArticle = await db.addNewsArticle({
     title: title.trim(),
     content: content.trim(),
     category: category ? String(category).trim() : "\u0625\u0639\u0644\u0627\u0646",
@@ -1378,10 +1716,10 @@ apiRouter.post("/admin/news", requireAdmin, (req, res) => {
   });
   res.status(201).json({ success: true, article: newArticle });
 });
-apiRouter.put("/admin/news/:id", requireAdmin, (req, res) => {
+apiRouter.put("/admin/news/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { title, content, category, imageUrl, pinned } = req.body;
-  const updated = db.updateNewsArticle(id, {
+  const updated = await db.updateNewsArticle(id, {
     ...title !== void 0 ? { title: String(title).trim() } : {},
     ...content !== void 0 ? { content: String(content).trim() } : {},
     ...category !== void 0 ? { category: String(category).trim() } : {},
@@ -1394,14 +1732,78 @@ apiRouter.put("/admin/news/:id", requireAdmin, (req, res) => {
   }
   res.json({ success: true, article: updated });
 });
-apiRouter.delete("/admin/news/:id", requireAdmin, (req, res) => {
+apiRouter.delete("/admin/news/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const deleted = db.deleteNewsArticle(id);
+  const deleted = await db.deleteNewsArticle(id);
   if (!deleted) {
     res.status(404).json({ error: "\u0627\u0644\u062E\u0628\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
     return;
   }
   res.json({ success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u062E\u0628\u0631 \u0628\u0646\u062C\u0627\u062D." });
+});
+apiRouter.post("/admin/tiers", requireAdmin, async (req, res) => {
+  const { name, color, label, rank } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    res.status(400).json({ error: "\u0627\u0633\u0645 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 (Tier Name) \u0645\u0637\u0644\u0648\u0628." });
+    return;
+  }
+  if (!color || typeof color !== "string" || !color.trim()) {
+    res.status(400).json({ error: "\u0644\u0648\u0646 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 (Tier Color) \u0645\u0637\u0644\u0648\u0628." });
+    return;
+  }
+  const newTier = await db.addTier({
+    name: name.trim().toUpperCase(),
+    color: color.trim(),
+    label: label ? String(label).trim() : void 0,
+    rank: typeof rank === "number" ? rank : void 0
+  });
+  res.status(201).json({
+    success: true,
+    tier: newTier,
+    tiers: db.getTiers(),
+    message: `\u062A\u0645 \u0625\u0636\u0627\u0641\u0629/\u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0633\u062A\u0648\u0649 ${newTier.name} \u0628\u0646\u062C\u0627\u062D.`
+  });
+});
+apiRouter.put("/admin/tiers/:name", requireAdmin, async (req, res) => {
+  const { name } = req.params;
+  const { name: newName, color, label, rank } = req.body;
+  const updated = await db.updateTier(name, {
+    ...newName ? { name: String(newName).trim().toUpperCase() } : {},
+    ...color ? { color: String(color).trim() } : {},
+    ...label !== void 0 ? { label: String(label).trim() } : {},
+    ...typeof rank === "number" ? { rank } : {}
+  });
+  if (!updated) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u0633\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+    return;
+  }
+  res.json({
+    success: true,
+    tier: updated,
+    tiers: db.getTiers(),
+    message: `\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0633\u062A\u0648\u0649 ${updated.name} \u0628\u0646\u062C\u0627\u062D.`
+  });
+});
+apiRouter.delete("/admin/tiers/:name", requireAdmin, async (req, res) => {
+  const { name } = req.params;
+  const deleted = await db.deleteTier(name);
+  if (!deleted) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u0633\u062A\u0648\u0649 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+    return;
+  }
+  res.json({
+    success: true,
+    tiers: db.getTiers(),
+    message: `\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0633\u062A\u0648\u0649 ${name.toUpperCase()} \u0628\u0646\u062C\u0627\u062D.`
+  });
+});
+apiRouter.post("/admin/tiers/reset", requireAdmin, async (req, res) => {
+  const resetTiers = await db.resetTiers();
+  res.json({
+    success: true,
+    tiers: resetTiers,
+    message: "\u062A\u0645\u062A \u0627\u0633\u062A\u0639\u0627\u062F\u0629 \u062A\u0635\u0646\u064A\u0641\u0627\u062A \u0648\u0645\u0633\u062A\u0648\u064A\u0627\u062A \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A\u0629 \u0628\u0646\u062C\u0627\u062D."
+  });
 });
 apiRouter.post("/admin/upload", requireAdmin, async (req, res) => {
   try {
@@ -1444,9 +1846,87 @@ apiRouter.post("/admin/upload", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "\u062D\u062F\u062B \u062E\u0637\u0623 \u0623\u062B\u0646\u0627\u0621 \u062D\u0641\u0638 \u0627\u0644\u0635\u0648\u0631\u0629 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0631\u0641\u0631." });
   }
 });
+apiRouter.get("/admin/profiles", requireAdmin, (_req, res) => {
+  const profiles = db.getAllProfiles();
+  const roles = db.getRoles();
+  const tiers = db.getTiers();
+  res.json({ profiles, roles, tiers });
+});
+apiRouter.get("/admin/profiles/:discordId", requireAdmin, (req, res) => {
+  const { discordId } = req.params;
+  const profile = db.getProfile(discordId);
+  if (!profile) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+    return;
+  }
+  res.json({ profile });
+});
+apiRouter.post("/admin/profiles", requireAdmin, async (req, res) => {
+  const { discordId, username, globalName, avatar, assignedRoles, tier, evaluationNotes } = req.body;
+  const validation = validateDiscordId(discordId);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+  const cleanId = String(discordId).trim();
+  const adminUser = getSessionUser(req);
+  const evaluatorName = adminUser?.globalName || adminUser?.username || "\u0627\u0644\u0625\u062F\u0627\u0631\u0629";
+  const profile = await db.upsertAdminProfile({
+    discordId: cleanId,
+    username: username ? String(username).trim() : void 0,
+    globalName: globalName ? String(globalName).trim() : void 0,
+    avatar: avatar ? String(avatar).trim() : void 0,
+    assignedRoles: Array.isArray(assignedRoles) ? assignedRoles.map(String) : [],
+    tier: tier ? String(tier).trim().toUpperCase() : void 0,
+    evaluationNotes: evaluationNotes ? String(evaluationNotes).trim() : void 0,
+    evaluatorName
+  });
+  res.status(201).json({
+    success: true,
+    profile,
+    message: "\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A \u0648\u062A\u0639\u064A\u064A\u0646 \u0627\u0644\u0631\u0648\u0644\u0627\u062A \u0648\u0627\u0644\u062A\u0642\u064A\u064A\u0645 \u0628\u0646\u062C\u0627\u062D."
+  });
+});
+apiRouter.put("/admin/profiles/:discordId", requireAdmin, async (req, res) => {
+  const { discordId } = req.params;
+  const validation = validateDiscordId(discordId);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+  const cleanId = String(discordId).trim();
+  const { username, globalName, avatar, assignedRoles, tier, evaluationNotes } = req.body;
+  const adminUser = getSessionUser(req);
+  const evaluatorName = adminUser?.globalName || adminUser?.username || "\u0627\u0644\u0625\u062F\u0627\u0631\u0629";
+  const profile = await db.upsertAdminProfile({
+    discordId: cleanId,
+    username: username !== void 0 ? String(username).trim() : void 0,
+    globalName: globalName !== void 0 ? String(globalName).trim() : void 0,
+    avatar: avatar !== void 0 ? String(avatar).trim() : void 0,
+    assignedRoles: Array.isArray(assignedRoles) ? assignedRoles.map(String) : void 0,
+    tier: tier !== void 0 ? tier ? String(tier).trim().toUpperCase() : "" : void 0,
+    evaluationNotes: evaluationNotes !== void 0 ? String(evaluationNotes).trim() : void 0,
+    evaluatorName
+  });
+  res.json({
+    success: true,
+    profile,
+    message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A \u0628\u0646\u062C\u0627\u062D."
+  });
+});
+apiRouter.delete("/admin/profiles/:discordId", requireAdmin, async (req, res) => {
+  const { discordId } = req.params;
+  const deleted = await db.deleteProfile(discordId);
+  if (!deleted) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+    return;
+  }
+  res.json({ success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A \u0628\u0646\u062C\u0627\u062D." });
+});
 
 // server/serverApp.ts
 async function startServer() {
+  await db.init();
   const app = express2();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
   app.use(express2.json({ limit: "25mb" }));
@@ -1459,8 +1939,9 @@ async function startServer() {
   app.use("/uploads", express2.static(uploadsDir));
   app.get(["/auth/callback", "/auth/callback/"], handleDiscordCallback);
   app.use("/api", apiRouter);
-  if (process.env.NODE_ENV === "production") {
-    const distPath = path3.resolve(process.cwd(), "dist");
+  const distPath = path3.resolve(process.cwd(), "dist");
+  const hasDist = fs3.existsSync(distPath);
+  if (process.env.NODE_ENV === "production" || hasDist) {
     app.use(express2.static(distPath));
     app.get("*", (_req, res) => {
       res.sendFile(path3.resolve(distPath, "index.html"));

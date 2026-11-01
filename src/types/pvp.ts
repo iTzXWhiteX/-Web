@@ -97,8 +97,14 @@ export interface UserProfile {
   email?: string;
   bio?: string;
   createdAt: string;
-  lastLogin: string;
+  lastLogin?: string;
   isAdmin: boolean;
+  assignedRoles?: string[]; // IDs of assigned roles
+  tier?: string;            // assigned tier/rating (e.g. HT1, LT1) or undefined
+  evaluationNotes?: string; // detailed evaluation notes / test feedback
+  evaluatedAt?: string;     // ISO timestamp of evaluation
+  evaluatorName?: string;   // name of evaluator/admin
+  isPreCreated?: boolean;   // true if created by admin before user authenticated
 }
 
 // Public view of leaderboard entry with tier and popup details, with Discord ID strictly hidden

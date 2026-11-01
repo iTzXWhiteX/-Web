@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -6,30 +7,60 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const bundledServer = path.resolve(__dirname, 'dist-server', 'server.js');
+const isProduction = process.env.NODE_ENV === 'production';
 
-if (fs.existsSync(bundledServer)) {
-  const mod = await import(pathToFileURL(bundledServer).href);
-  if (mod.startServer) {
-    await mod.startServer();
-  }
-} else {
+async function ensureFreshBundle(): Promise<void> {
   try {
-    const esbuild = await import('esbuild');
-    await esbuild.build({
-      entryPoints: [path.resolve(__dirname, 'server', 'serverApp.ts')],
-      bundle: true,
-      platform: 'node',
-      format: 'esm',
-      outfile: bundledServer,
-      packages: 'external',
-    });
+    const serverAppTs = path.resolve(__dirname, 'server', 'serverApp.ts');
+    const dbTs = path.resolve(__dirname, 'server', 'db.ts');
+    let needsBuild = !fs.existsSync(bundledServer);
+
+    if (!needsBuild && fs.existsSync(bundledServer)) {
+      const bundleMtime = fs.statSync(bundledServer).mtimeMs;
+      if (fs.existsSync(serverAppTs) && fs.statSync(serverAppTs).mtimeMs > bundleMtime) {
+        needsBuild = true;
+      }
+      if (fs.existsSync(dbTs) && fs.statSync(dbTs).mtimeMs > bundleMtime) {
+        needsBuild = true;
+      }
+    }
+
+    if (needsBuild) {
+      console.log('[Server] Building fresh server bundle from serverApp.ts...');
+      const esbuild = await import('esbuild');
+      await esbuild.build({
+        entryPoints: [serverAppTs],
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        outfile: bundledServer,
+        packages: 'external',
+      });
+      console.log('[Server] Fresh dist-server/server.js bundle created.');
+    }
+  } catch (err) {
+    console.warn('[Server] Could not bundle with esbuild:', err);
+  }
+}
+
+const distExists = fs.existsSync(path.resolve(__dirname, 'dist'));
+const shouldRunBundle = isProduction || distExists;
+
+if (shouldRunBundle) {
+  await ensureFreshBundle();
+  if (fs.existsSync(bundledServer)) {
     const mod = await import(pathToFileURL(bundledServer).href);
     if (mod.startServer) {
       await mod.startServer();
     }
-  } catch (err) {
-    console.warn('Fallback loading serverApp.ts directly:', err);
+  } else {
+    console.log('[Server] Starting serverApp.ts directly');
     const { startServer } = await import('./server/serverApp.ts');
     await startServer();
   }
+} else {
+  // In development, load serverApp.ts directly for live Vite middlewares
+  const { startServer } = await import('./server/serverApp.ts');
+  await startServer();
 }
+

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -170,6 +171,9 @@ const DEFAULT_USERS: Record<string, UserProfile> = {
     createdAt: '2026-01-01T00:00:00.000Z',
     lastLogin: '2026-10-27T10:00:00.000Z',
     isAdmin: true,
+    assignedRoles: ['role_founder'],
+    tier: 'HT1',
+    evaluationNotes: 'مؤسس السيرفر ومقيم المستويات الأول.',
   },
   '482910482910482910': {
     id: 'user_vortex',
@@ -181,6 +185,9 @@ const DEFAULT_USERS: Record<string, UserProfile> = {
     createdAt: '2026-01-15T12:00:00.000Z',
     lastLogin: '2026-10-26T18:30:00.000Z',
     isAdmin: false,
+    assignedRoles: ['role_champion'],
+    tier: 'HT1',
+    evaluationNotes: 'أداء متميز في الكريستال والـ Pot.',
   },
   '819203810293819201': {
     id: 'user_frostbyte',
@@ -192,6 +199,9 @@ const DEFAULT_USERS: Record<string, UserProfile> = {
     createdAt: '2026-02-01T15:20:00.000Z',
     lastLogin: '2026-10-25T20:10:00.000Z',
     isAdmin: false,
+    assignedRoles: ['role_tester'],
+    tier: 'LT1',
+    evaluationNotes: 'مختبر رسمي معتمد في نزالات الدروع.',
   },
   '391029384756102938': {
     id: 'user_khaos',
@@ -203,6 +213,8 @@ const DEFAULT_USERS: Record<string, UserProfile> = {
     createdAt: '2026-02-10T09:40:00.000Z',
     lastLogin: '2026-10-24T14:15:00.000Z',
     isAdmin: false,
+    assignedRoles: ['role_gladiator'],
+    tier: 'HT2',
   },
 };
 
@@ -270,14 +282,17 @@ class DatabaseManager {
     if (this.isInitialized) return;
 
     const connectionString = process.env.DATABASE_URL;
+    const isProduction = process.env.NODE_ENV === 'production';
+
     if (!connectionString) {
-      console.warn('[Database] DATABASE_URL is not configured. Falling back to persistent local JSON file storage.');
+      console.warn('[Database] DATABASE_URL is not configured. Running with persistent local JSON storage.');
+      console.warn('[Database] To enable PostgreSQL persistence on EthioDeploy or your production database, configure DATABASE_URL.');
       this.isInitialized = true;
       return;
     }
 
     try {
-      console.log('[Database] Connecting to PostgreSQL database on EthioDeploy...');
+      console.log('[Database] Connecting to PostgreSQL database using DATABASE_URL...');
       const isLocalhost = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
 
       this.pool = new Pool({
@@ -289,6 +304,7 @@ class DatabaseManager {
 
       const client = await this.pool.connect();
       try {
+        console.log('[Database] Connected to PostgreSQL. Initializing table "white_kingdom_storage"...');
         // 1. Create table automatically if not exists
         await client.query(`
           CREATE TABLE IF NOT EXISTS white_kingdom_storage (
@@ -297,6 +313,7 @@ class DatabaseManager {
             updated_at TIMESTAMPTZ DEFAULT NOW()
           );
         `);
+        console.log('[Database] Table "white_kingdom_storage" verified and ready in PostgreSQL.');
 
         // 2. Check if persistent data already exists in PostgreSQL
         const res = await client.query(
@@ -305,14 +322,19 @@ class DatabaseManager {
 
         if (res.rows.length > 0 && res.rows[0].data) {
           // Never overwrite existing PostgreSQL data with default data!
-          console.log('[Database] Existing PostgreSQL data found. Loading into memory...');
+          console.log('[Database] Persistent record "white_kingdom_db" found in PostgreSQL. Loading state into memory...');
           this.data = this.sanitizeSchema(res.rows[0].data);
           // Keep local backup file synchronized
           this.saveDatabaseSync(this.data);
-          console.log('[Database] Persistent state successfully loaded from PostgreSQL.');
+          console.log(`[Database] Persistent state loaded successfully from PostgreSQL (${Object.keys(this.data.users).length} profiles, ${this.data.leaderboard.length} leaderboard players).`);
         } else {
-          // On first initialization only, migrate existing JSON data into PostgreSQL if empty
-          console.log('[Database] PostgreSQL storage is empty. Migrating existing JSON data into PostgreSQL...');
+          // Storage in PostgreSQL is empty. Check if local JSON file actually exists on disk before migrating!
+          const jsonFileExists = fs.existsSync(DB_FILE);
+          if (jsonFileExists) {
+            console.log('[Database] PostgreSQL storage is empty. Migrating existing local JSON data into PostgreSQL...');
+          } else {
+            console.log('[Database] PostgreSQL storage is empty and no local JSON exists. Initializing with default community data...');
+          }
           const currentData = this.data;
           await client.query(
             `INSERT INTO white_kingdom_storage (key, data, updated_at)
@@ -320,7 +342,7 @@ class DatabaseManager {
              ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW();`,
             [JSON.stringify(currentData)]
           );
-          console.log('[Database] Migration of existing JSON data into PostgreSQL completed successfully.');
+          console.log('[Database] Initial data written to PostgreSQL "white_kingdom_storage" successfully.');
         }
 
         this.isInitialized = true;
@@ -328,8 +350,10 @@ class DatabaseManager {
         client.release();
       }
     } catch (err: any) {
-      console.error('[Database] PostgreSQL connection/initialization error:', err?.message || err);
-      console.warn('[Database] Continuing with local JSON file storage to prevent server downtime.');
+      console.error('[Database ERROR] PostgreSQL connection/initialization error:', err?.message || err);
+      console.warn('[Database] Continuing with persistent local JSON file storage fallback.');
+      this.pool = null;
+      this.isInitialized = true;
     }
   }
 
@@ -420,8 +444,32 @@ class DatabaseManager {
       leaderboard = DEFAULT_LEADERBOARD;
     }
 
+    const rawUsers = parsed?.users || DEFAULT_USERS;
+    const sanitizedUsers: Record<string, UserProfile> = {};
+    for (const [id, u] of Object.entries(rawUsers as Record<string, any>)) {
+      sanitizedUsers[id] = {
+        id: u?.id || `user_${id}`,
+        discordId: u?.discordId || id,
+        username: u?.username || `Player_${id.slice(-4)}`,
+        globalName: u?.globalName,
+        avatar: u?.avatar || resolveDiscordAvatar(id),
+        discriminator: u?.discriminator || '0',
+        email: u?.email,
+        bio: u?.bio || '',
+        createdAt: u?.createdAt || new Date().toISOString(),
+        lastLogin: u?.lastLogin,
+        isAdmin: !!u?.isAdmin,
+        assignedRoles: Array.isArray(u?.assignedRoles) ? u.assignedRoles : [],
+        tier: u?.tier ? String(u.tier).trim().toUpperCase() : undefined,
+        evaluationNotes: u?.evaluationNotes ? String(u.evaluationNotes) : undefined,
+        evaluatedAt: u?.evaluatedAt ? String(u.evaluatedAt) : undefined,
+        evaluatorName: u?.evaluatorName ? String(u.evaluatorName) : undefined,
+        isPreCreated: !!u?.isPreCreated,
+      };
+    }
+
     return {
-      users: parsed?.users || DEFAULT_USERS,
+      users: sanitizedUsers,
       adminDiscordIds: parsed?.adminDiscordIds || ['1324725244073873539', '184719284719284719'],
       settings,
       testServers,
@@ -697,7 +745,15 @@ class DatabaseManager {
     return this.data.users[discordId];
   }
 
+  public getProfile(discordId: string): UserProfile | undefined {
+    return this.data.users[discordId];
+  }
+
   public getAllUsers(): UserProfile[] {
+    return Object.values(this.data.users);
+  }
+
+  public getAllProfiles(): UserProfile[] {
     return Object.values(this.data.users);
   }
 
@@ -705,6 +761,8 @@ class DatabaseManager {
     const existing = this.data.users[profile.discordId];
     const isAdmin = this.isAdmin(profile.discordId);
 
+    // Merge: when user authenticates via Discord OAuth, preserve any roles, tier, and evaluation
+    // previously assigned by an administrator!
     const updated: UserProfile = {
       id: existing?.id || `user_${profile.discordId}`,
       discordId: profile.discordId,
@@ -717,6 +775,12 @@ class DatabaseManager {
       createdAt: existing?.createdAt || new Date().toISOString(),
       lastLogin: new Date().toISOString(),
       isAdmin,
+      assignedRoles: existing?.assignedRoles || profile.assignedRoles || [],
+      tier: existing?.tier || profile.tier,
+      evaluationNotes: existing?.evaluationNotes || profile.evaluationNotes,
+      evaluatedAt: existing?.evaluatedAt || profile.evaluatedAt,
+      evaluatorName: existing?.evaluatorName || profile.evaluatorName,
+      isPreCreated: false, // User has now actively authenticated!
     };
 
     this.data.users[profile.discordId] = updated;
@@ -726,6 +790,10 @@ class DatabaseManager {
       if (entry.discordId === profile.discordId) {
         if (updated.username) entry.discordDisplayName = updated.globalName || updated.username;
         if (updated.avatar) entry.discordAvatar = updated.avatar;
+        if (updated.tier) {
+          entry.tierName = updated.tier;
+          entry.tierRank = getTierRank(updated.tier, this.data.tiers);
+        }
       }
     }
 
@@ -744,6 +812,72 @@ class DatabaseManager {
       console.error('[Database] Background save error on upsertUserSync:', err);
     });
     return updated;
+  }
+
+  /**
+   * Administrator-controlled profile creation / editing using Discord user ID.
+   * A player is NOT required to register or log in first.
+   */
+  public async upsertAdminProfile(params: {
+    discordId: string;
+    username?: string;
+    globalName?: string;
+    avatar?: string;
+    assignedRoles?: string[];
+    tier?: string;
+    evaluationNotes?: string;
+    evaluatorName?: string;
+  }): Promise<UserProfile> {
+    const cleanId = params.discordId.trim();
+    const existing = this.data.users[cleanId];
+    const isAdmin = this.isAdmin(cleanId);
+
+    const updated: UserProfile = {
+      id: existing?.id || `user_${cleanId}`,
+      discordId: cleanId,
+      username: params.username?.trim() || existing?.username || `Player_${cleanId.slice(-4)}`,
+      globalName: params.globalName?.trim() || existing?.globalName || params.username?.trim() || `Player_${cleanId.slice(-4)}`,
+      avatar: params.avatar?.trim() || existing?.avatar || resolveDiscordAvatar(cleanId),
+      discriminator: existing?.discriminator || '0',
+      email: existing?.email,
+      bio: existing?.bio || '',
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      lastLogin: existing?.lastLogin,
+      isAdmin,
+      assignedRoles: Array.isArray(params.assignedRoles) ? params.assignedRoles : (existing?.assignedRoles || []),
+      tier: params.tier !== undefined ? (params.tier?.trim().toUpperCase() || undefined) : existing?.tier,
+      evaluationNotes: params.evaluationNotes !== undefined ? params.evaluationNotes.trim() : existing?.evaluationNotes,
+      evaluatedAt: params.evaluationNotes !== undefined ? new Date().toISOString() : existing?.evaluatedAt,
+      evaluatorName: params.evaluatorName || existing?.evaluatorName,
+      isPreCreated: existing ? existing.isPreCreated : true,
+    };
+
+    this.data.users[cleanId] = updated;
+
+    // Automatically synchronize any leaderboard entry matching this Discord ID
+    for (const entry of this.data.leaderboard) {
+      if (entry.discordId === cleanId) {
+        if (updated.username) entry.discordDisplayName = updated.globalName || updated.username;
+        if (updated.avatar) entry.discordAvatar = updated.avatar;
+        if (updated.tier) {
+          entry.tierName = updated.tier;
+          entry.tierRank = getTierRank(updated.tier, this.data.tiers);
+        }
+      }
+    }
+
+    await this.save();
+    return updated;
+  }
+
+  public async deleteProfile(discordId: string): Promise<boolean> {
+    const cleanId = discordId.trim();
+    if (this.data.users[cleanId]) {
+      delete this.data.users[cleanId];
+      await this.save();
+      return true;
+    }
+    return false;
   }
 
   public isAdmin(discordId: string): boolean {

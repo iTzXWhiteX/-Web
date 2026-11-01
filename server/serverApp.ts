@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
@@ -32,8 +33,10 @@ export async function startServer() {
   app.use('/api', apiRouter);
 
   // Dev server vs Production static server
-  if (process.env.NODE_ENV === 'production') {
-    const distPath = path.resolve(process.cwd(), 'dist');
+  const distPath = path.resolve(process.cwd(), 'dist');
+  const hasDist = fs.existsSync(distPath);
+
+  if (process.env.NODE_ENV === 'production' || hasDist) {
     app.use(express.static(distPath));
     app.get('*', (_req, res) => {
       res.sendFile(path.resolve(distPath, 'index.html'));

@@ -26,6 +26,7 @@ import {
   HelpCircle,
   Award,
   RefreshCw,
+  User,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -40,6 +41,7 @@ import {
 } from '../types/pvp.js';
 import { DiscordFormattedText } from '../utils/discordMentionParser.js';
 import { ImageUploadInput } from '../components/ImageUploadInput.js';
+import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
 
 interface AdminDashboardPageProps {
   user: UserProfile;
@@ -56,7 +58,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   onRefreshPublicData,
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<'settings' | 'about' | 'tierTest' | 'tiers' | 'news' | 'roles' | 'servers' | 'leaderboard'>('settings');
+  const [activeTab, setActiveTab] = useState<'settings' | 'about' | 'tierTest' | 'tiers' | 'news' | 'roles' | 'servers' | 'leaderboard' | 'profiles'>('profiles');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -154,6 +156,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [playerDiscordUsername, setPlayerDiscordUsername] = useState('');
   const lookupDebounceRef = useRef<any>(null);
 
+  // Profiles, Roles & Ratings state
+  const [profilesList, setProfilesList] = useState<UserProfile[]>([]);
+  const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
+  const [profileDiscordId, setProfileDiscordId] = useState('');
+  const [profileUsername, setProfileUsername] = useState('');
+  const [profileGlobalName, setProfileGlobalName] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState('');
+  const [profileAssignedRoles, setProfileAssignedRoles] = useState<string[]>([]);
+  const [profileTier, setProfileTier] = useState<string>('');
+  const [profileEvaluationNotes, setProfileEvaluationNotes] = useState('');
+  const [profileSearchFilter, setProfileSearchFilter] = useState('');
+  const [lookingUpProfileDiscord, setLookingUpProfileDiscord] = useState(false);
+
   // Helper to attach authorization header if present in localStorage (avoids iframe third-party cookie restrictions)
   const getAuthHeaders = useCallback((extraHeaders?: Record<string, string>) => {
     const token = localStorage.getItem('wk_token');
@@ -167,7 +182,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // In-App Delete Confirmation Modal state (bypasses window.confirm which is blocked by iframe sandboxes)
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
-    type: 'role' | 'player' | 'server' | 'news' | 'tier';
+    type: 'role' | 'player' | 'server' | 'news' | 'tier' | 'profile';
     id: string;
     title: string;
     message: string;
@@ -188,6 +203,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         if (data.newsArticles) setNewsArticles(data.newsArticles);
         if (data.roles) setRoles(data.roles);
         if (data.tiers) setTiersList(data.tiers);
+        if (data.users) setProfilesList(Array.isArray(data.users) ? data.users : Object.values(data.users));
       } else {
         setStatusMessage({ text: 'فشل تحميل بيانات لوحة الإدارة.', type: 'error' });
       }
@@ -833,6 +849,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       else if (type === 'server') endpoint = `/api/admin/servers/${id}`;
       else if (type === 'player') endpoint = `/api/admin/leaderboard/${id}`;
       else if (type === 'tier') endpoint = `/api/admin/tiers/${encodeURIComponent(id)}`;
+      else if (type === 'profile') endpoint = `/api/admin/profiles/${encodeURIComponent(id)}`;
 
       const res = await fetch(endpoint, {
         method: 'DELETE',
@@ -854,6 +871,127 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  // --- Profile Management Handlers ---
+  const handleLookupProfileDiscord = async (idToLookup?: string) => {
+    const targetId = (idToLookup || profileDiscordId).trim();
+    if (!targetId) {
+      showNotification('يرجى إدخال معرّف (ID) حساب ديسكورد أولاً.', 'error');
+      return;
+    }
+    try {
+      setLookingUpProfileDiscord(true);
+      const res = await fetch(`/api/admin/discord-lookup/${targetId}`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfileUsername(data.username || '');
+        setProfileGlobalName(data.displayName || data.username || '');
+        setProfileAvatar(data.avatar || '');
+        showNotification('تم جلب بيانات وصورة حساب ديسكورد بنجاح!');
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'فشل جلب بيانات الحساب.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('خطأ أثناء جلب بيانات حساب ديسكورد.', 'error');
+    } finally {
+      setLookingUpProfileDiscord(false);
+    }
+  };
+
+  const handleToggleProfileRole = (roleId: string) => {
+    setProfileAssignedRoles(prev =>
+      prev.includes(roleId) ? prev.filter(r => r !== roleId) : [...prev, roleId]
+    );
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profileDiscordId.trim()) {
+      showNotification('معرّف ديسكورد (Discord User ID) مطلوب.', 'error');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const isEditing = !!editingProfile;
+      const endpoint = isEditing
+        ? `/api/admin/profiles/${encodeURIComponent(profileDiscordId.trim())}`
+        : '/api/admin/profiles';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          discordId: profileDiscordId.trim(),
+          username: profileUsername.trim() || undefined,
+          globalName: profileGlobalName.trim() || undefined,
+          avatar: profileAvatar.trim() || undefined,
+          assignedRoles: profileAssignedRoles,
+          tier: profileTier || '',
+          evaluationNotes: profileEvaluationNotes.trim() || '',
+        }),
+      });
+
+      if (res.ok) {
+        showNotification(isEditing ? 'تم تحديث الملف الشخصي والرولات والتقييم بنجاح!' : 'تم إنشاء وحفظ الملف الشخصي بنجاح!');
+        setEditingProfile(null);
+        setProfileDiscordId('');
+        setProfileUsername('');
+        setProfileGlobalName('');
+        setProfileAvatar('');
+        setProfileAssignedRoles([]);
+        setProfileTier('');
+        setProfileEvaluationNotes('');
+        await fetchAdminData();
+        onRefreshPublicData();
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'فشل حفظ الملف الشخصي.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('حدث خطأ أثناء حفظ الملف الشخصي في قاعدة البيانات.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditProfile = (p: UserProfile) => {
+    setEditingProfile(p);
+    setProfileDiscordId(p.discordId);
+    setProfileUsername(p.username || '');
+    setProfileGlobalName(p.globalName || '');
+    setProfileAvatar(p.avatar || '');
+    setProfileAssignedRoles(p.assignedRoles || []);
+    setProfileTier(p.tier || '');
+    setProfileEvaluationNotes(p.evaluationNotes || '');
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  const handleCancelEditProfile = () => {
+    setEditingProfile(null);
+    setProfileDiscordId('');
+    setProfileUsername('');
+    setProfileGlobalName('');
+    setProfileAvatar('');
+    setProfileAssignedRoles([]);
+    setProfileTier('');
+    setProfileEvaluationNotes('');
+  };
+
+  const handleDeleteProfile = (p: UserProfile) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'profile',
+      id: p.discordId,
+      title: p.globalName || p.username || `الحساب ${p.discordId}`,
+      message: `هل أنت متأكد من حذف الملف الشخصي للحساب (${p.globalName || p.username} - ID: ${p.discordId}) نهائياً؟`,
+    });
   };
 
   if (loading) {
@@ -1001,6 +1139,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         >
           <Trophy className="w-4 h-4" />
           <span>إدارة وتعديل اللاعبين ({leaderboard.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profiles')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+            activeTab === 'profiles'
+              ? 'bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <Shield className="w-4 h-4" />
+          <span>حسابات ديسكورد والرولات والتقييمات ({profilesList.length})</span>
         </button>
       </div>
 
@@ -2811,6 +2961,413 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 8: Discord Profiles, Roles, and Ratings Management */}
+      {activeTab === 'profiles' && (
+        <div className="space-y-8 text-right" dir="rtl">
+          {/* Header Card */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/25 relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-heading font-extrabold text-xl sm:text-2xl text-white">
+                      إدارة حسابات ديسكورد والرولات والتقييمات
+                    </h2>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      إنشاء وتعيين الرولات ومستويات Tiers لحسابات ديسكورد عبر معرّف ID دون اشتراط تسجيل دخول مسبق
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 text-xs font-mono text-cyan-300">
+                <span>إجمالي الحسابات:</span>
+                <span className="font-bold text-white text-sm">{profilesList.length}</span>
+              </div>
+            </div>
+
+            {/* Profile Creation / Editing Form */}
+            <div className="mt-6 pt-2 space-y-5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading font-bold text-base text-white flex items-center gap-2">
+                  <User className="w-4 h-4 text-cyan-400" />
+                  <span>{editingProfile ? `تعديل الحساب (${editingProfile.globalName || editingProfile.username})` : 'إضافة أو تعيين حساب لاعب جديد عبر Discord ID'}</span>
+                </h3>
+                {editingProfile && (
+                  <button
+                    onClick={handleCancelEditProfile}
+                    className="text-xs text-slate-400 hover:text-white underline cursor-pointer"
+                  >
+                    إلغاء التعديل
+                  </button>
+                )}
+              </div>
+
+              {/* Step 1: Discord ID Input & Automatic Lookup */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-end">
+                <div className="lg:col-span-8 space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-200">
+                    معرّف حساب ديسكورد (Discord User ID) <span className="text-red-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      dir="ltr"
+                      value={profileDiscordId}
+                      onChange={(e) => setProfileDiscordId(e.target.value)}
+                      placeholder="مثال: 184719284719284719 أو 1324725244073873539"
+                      className="w-full h-11 px-4 rounded-xl bg-slate-900/90 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all placeholder:text-slate-600"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    المعرّف الثابت لحساب الديسكورد (17 إلى 20 رقماً). لا يعتمد على اسم المستخدم القابل للتغيير.
+                  </p>
+                </div>
+
+                <div className="lg:col-span-4">
+                  <button
+                    type="button"
+                    disabled={lookingUpProfileDiscord || !profileDiscordId.trim()}
+                    onClick={() => handleLookupProfileDiscord()}
+                    className="w-full h-11 px-4 rounded-xl font-heading font-bold text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-cyan-300 border border-cyan-500/30 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                  >
+                    {lookingUpProfileDiscord ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                        <span>جاري جلب بيانات الحساب...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 text-cyan-400" />
+                        <span>فحص وجلب صورة واسم الحساب</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Step 2: Fallback Display Name & Avatar URL (if user hasn't logged in yet) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-900/50 border border-slate-800">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-300">
+                    الاسم الظاهر للاعب (Display Name) <span className="text-[11px] text-slate-500 font-normal">(اختياري / يُجلب تلقائياً)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={profileGlobalName}
+                    onChange={(e) => setProfileGlobalName(e.target.value)}
+                    placeholder="مثال: White Knight أو Gladiator"
+                    className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-cyan-400 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-300">
+                    رابط صورة الحساب (Avatar URL) <span className="text-[11px] text-slate-500 font-normal">(اختياري / يُجلب تلقائياً)</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {profileAvatar ? (
+                      <img
+                        src={profileAvatar}
+                        alt="Avatar Preview"
+                        className="w-10 h-10 rounded-xl border border-cyan-400 object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-center text-slate-500 flex-shrink-0 text-xs">
+                        ?
+                      </div>
+                    )}
+                    <input
+                      type="url"
+                      dir="ltr"
+                      value={profileAvatar}
+                      onChange={(e) => setProfileAvatar(e.target.value)}
+                      placeholder="https://cdn.discordapp.com/avatars/..."
+                      className="w-full h-10 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-cyan-400 transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3: Assign Website Roles (Multi-select) */}
+              <div className="space-y-2 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+                <label className="block text-xs font-bold text-slate-200">
+                  الرولات الممنوحة لهذا الحساب (Website Roles)
+                </label>
+                <p className="text-[11px] text-slate-400 mb-2">
+                  اختر رولاً واحداً أو عدة رولات لمنحها لحساب ديسكورد هذا:
+                </p>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {roles.map((role) => {
+                    const isSelected = profileAssignedRoles.includes(role.id);
+                    return (
+                      <button
+                        type="button"
+                        key={role.id}
+                        onClick={() => handleToggleProfileRole(role.id)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none ${
+                          isSelected
+                            ? 'shadow-[0_0_12px_rgba(0,229,255,0.3)] ring-2'
+                            : 'opacity-60 hover:opacity-100'
+                        }`}
+                        style={{
+                          backgroundColor: `${role.color || '#00e5ff'}20`,
+                          color: role.color || '#00e5ff',
+                          border: `1px solid ${role.color || '#00e5ff'}60`,
+                        }}
+                      >
+                        <span>{role.emoji || '🛡️'}</span>
+                        <span>{role.name}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 mr-1" />}
+                      </button>
+                    );
+                  })}
+                  {roles.length === 0 && (
+                    <p className="text-xs text-slate-500">لا توجد رولات مسجلة في السيرفر حالياً.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 4: Tier / Rating Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-200">
+                    تقييم المستوى (Tier / Rating)
+                  </label>
+                  <select
+                    value={profileTier}
+                    onChange={(e) => setProfileTier(e.target.value)}
+                    className="w-full h-11 px-3 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-xs focus:outline-none focus:border-cyan-400 transition-colors cursor-pointer"
+                  >
+                    <option value="">بدون تقييم حالياً (غير مقيّم)</option>
+                    {tiersList.map((t) => (
+                      <option key={t.name} value={t.name}>
+                        {t.name} - {t.label || t.name} (#{t.rank})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-center p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  {profileTier ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400">معاينة التقييم:</span>
+                      <span
+                        className="px-3 py-1 rounded-lg text-xs font-heading font-black shadow-md"
+                        style={{
+                          backgroundColor: `${tiersList.find(t => t.name === profileTier)?.color || '#00e5ff'}20`,
+                          color: tiersList.find(t => t.name === profileTier)?.color || '#00e5ff',
+                          border: `1px solid ${tiersList.find(t => t.name === profileTier)?.color || '#00e5ff'}60`,
+                        }}
+                      >
+                        {profileTier}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-500">الحساب بدون تقييم Tier حالياً</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 5: Evaluation Notes */}
+              <div className="space-y-1.5 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
+                <label className="block text-xs font-bold text-slate-200">
+                  ملاحظات وتفاصيل التقييم (Evaluation Notes & Description)
+                </label>
+                <textarea
+                  rows={3}
+                  value={profileEvaluationNotes}
+                  onChange={(e) => setProfileEvaluationNotes(e.target.value)}
+                  placeholder="اكتب هنا ملاحظات وتفاصيل التقييم، أداء اللاعب في النيذرلايت أو الكريستال أو الشيلد، نقاط القوة والملاحظات الفنية الخاصة بالاختبار..."
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs leading-relaxed focus:outline-none focus:border-cyan-400 transition-colors"
+                />
+                <p className="text-[11px] text-slate-400">
+                  هذه الملاحظات تظهر للاعب نفسه داخل ملفه الشخصي كمرجع لتقييمه الفني.
+                </p>
+              </div>
+
+              {/* Save & Reset Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={saving || !profileDiscordId.trim()}
+                  onClick={handleSaveProfile}
+                  className="px-6 py-3 rounded-xl font-heading font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 disabled:opacity-50 text-white shadow-[0_0_20px_rgba(0,229,255,0.35)] transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{saving ? 'جاري الحفظ في PostgreSQL...' : editingProfile ? 'حفظ تعديلات الحساب' : 'حفظ وتثبيت الملف في قاعدة البيانات'}</span>
+                </button>
+
+                {editingProfile && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEditProfile}
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                  >
+                    إلغاء التعديل
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Existing Profiles Table & Search */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/25 space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+              <div>
+                <h3 className="font-heading font-extrabold text-lg text-white flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                  <span>قائمة الحسابات والملفات المسجلة</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  جميع الحسابات التي تم تعيين رولات أو تقييمات لها في الموقع
+                </p>
+              </div>
+
+              {/* Search Filter by Discord ID or Name */}
+              <div className="w-full sm:w-72 relative">
+                <input
+                  type="text"
+                  value={profileSearchFilter}
+                  onChange={(e) => setProfileSearchFilter(e.target.value)}
+                  placeholder="ابحث بالـ Discord ID أو الاسم..."
+                  className="w-full h-10 px-3 pl-9 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-cyan-400 transition-colors placeholder:text-slate-600"
+                />
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Profiles Cards / Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profilesList
+                .filter((p) => {
+                  if (!profileSearchFilter.trim()) return true;
+                  const query = profileSearchFilter.trim().toLowerCase();
+                  return (
+                    p.discordId.includes(query) ||
+                    (p.globalName && p.globalName.toLowerCase().includes(query)) ||
+                    (p.username && p.username.toLowerCase().includes(query)) ||
+                    (p.tier && p.tier.toLowerCase().includes(query))
+                  );
+                })
+                .map((p) => {
+                  const resolvedRoles = resolveUserRoles(p.assignedRoles || [], roles);
+                  const tierDef = getTierDefinition(p.tier, tiersList);
+                  return (
+                    <div
+                      key={p.discordId}
+                      className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/40 transition-all space-y-3.5 shadow-sm"
+                    >
+                      {/* Top Row: Avatar + Name + ID */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                            alt={p.username}
+                            className="w-12 h-12 rounded-xl border border-cyan-400/60 object-cover flex-shrink-0"
+                          />
+                          <div className="min-w-0 text-right">
+                            <div className="font-heading font-bold text-sm text-white truncate flex items-center gap-1.5">
+                              <span>{p.globalName || p.username}</span>
+                              {p.isAdmin && (
+                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">ADMIN</span>
+                              )}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400 truncate" dir="ltr">
+                              @{p.username}
+                            </div>
+                            <div className="text-[10px] font-mono text-cyan-400 mt-0.5 truncate" dir="ltr">
+                              ID: {p.discordId}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Tier Badge */}
+                        <div className="flex-shrink-0">
+                          {tierDef ? (
+                            <span
+                              className="px-2.5 py-1 rounded-lg text-xs font-heading font-black shadow-sm"
+                              style={{
+                                backgroundColor: `${tierDef.color || '#00e5ff'}20`,
+                                color: tierDef.color || '#00e5ff',
+                                border: `1px solid ${tierDef.color || '#00e5ff'}60`,
+                              }}
+                            >
+                              {tierDef.name}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                              غير مقيّم
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Roles Badges */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {resolvedRoles.map((role: ServerRole) => (
+                          <span
+                            key={role.id}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold"
+                            style={{
+                              backgroundColor: `${role.color || '#00e5ff'}15`,
+                              color: role.color || '#00e5ff',
+                              border: `1px solid ${role.color || '#00e5ff'}30`,
+                            }}
+                          >
+                            <span>{role.emoji || '🛡️'}</span>
+                            <span>{role.name}</span>
+                          </span>
+                        ))}
+                        {resolvedRoles.length === 0 && (
+                          <span className="text-[10px] text-slate-500">لا توجد رولات ممنوحة</span>
+                        )}
+                      </div>
+
+                      {/* Evaluation Notes Snippet */}
+                      {p.evaluationNotes && (
+                        <p className="text-[11px] text-slate-300 bg-slate-950/50 p-2.5 rounded-xl border border-slate-800 line-clamp-2">
+                          <span className="text-cyan-400 font-semibold ml-1">التقييم:</span>
+                          {p.evaluationNotes}
+                        </p>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-800/80">
+                        <button
+                          type="button"
+                          onClick={() => handleEditProfile(p)}
+                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>تعديل</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProfile(p)}
+                          className="px-3 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-300 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>حذف</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {profilesList.length === 0 && (
+              <div className="py-12 text-center text-slate-400 text-xs">
+                لا توجد حسابات مسجلة حالياً. استخدم النموذج أعلاه لإضافة أي حساب عبر معرّف ديسكورد.
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -25,6 +25,7 @@ interface NavbarProps {
   activePage: string;
   onNavigate: (page: string) => void;
   onOpenLogin: () => void;
+  onOpenProfile: () => void;
   onLogout: () => void;
 }
 
@@ -39,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   activePage,
   onNavigate,
   onOpenLogin,
+  onOpenProfile,
   onLogout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -103,23 +105,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* Center Section: Desktop Navigation Links (Polished, Balanced Pill Container) */}
-        <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-1.5 lg:gap-2.5 p-1.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.25)] flex-shrink-0">
+        {/* Center Section: Desktop Navigation Links with Top-Only Glass Borders */}
+        <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-2.5 xl:gap-3 flex-shrink-0">
           {navLinks.map((link) => {
             const active = isLinkActive(link);
             return (
               <button
                 key={link.id}
                 onClick={() => onNavigate(link.id)}
-                className={`relative h-10 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer flex items-center justify-center text-center whitespace-nowrap select-none ${
+                className={`relative h-11 px-4 xl:px-5 rounded-xl text-xs xl:text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer flex items-center justify-center text-center whitespace-nowrap select-none backdrop-blur-md ${
                   active
-                    ? 'text-cyan-300 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-400/50 shadow-[0_0_16px_rgba(0,229,255,0.25)] font-bold'
-                    : 'text-slate-300 hover:text-white hover:bg-white/[0.06] border border-transparent'
+                    ? 'border-t-2 border-cyan-300 border-x-0 border-b-0 text-cyan-200 bg-gradient-to-b from-cyan-500/25 to-slate-900/80 shadow-[0_-4px_16px_rgba(0,229,255,0.3)] font-bold'
+                    : 'border-t-2 border-cyan-500/25 border-x-0 border-b-0 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/60 hover:bg-slate-800/80'
                 }`}
               >
                 <span>{link.label}</span>
                 {active && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#00e5ff]" />
+                  <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#00e5ff]" />
                 )}
               </button>
             );
@@ -129,10 +131,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {user?.isAdmin && (
             <button
               onClick={() => onNavigate('admin')}
-              className={`h-10 px-3.5 py-2 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none mr-0.5 ${
+              className={`h-11 px-4 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none border-t-2 border-x-0 border-b-0 backdrop-blur-md ${
                 activePage === 'admin'
-                  ? 'bg-cyan-500 text-black border border-cyan-400 shadow-[0_0_16px_rgba(0,229,255,0.4)]'
-                  : 'bg-cyan-950/60 text-cyan-300 hover:bg-cyan-900/80 border border-cyan-500/40'
+                  ? 'border-t-cyan-300 bg-cyan-500 text-black shadow-[0_0_16px_rgba(0,229,255,0.4)]'
+                  : 'border-t-cyan-500/40 bg-cyan-950/70 text-cyan-300 hover:bg-cyan-900/80'
               }`}
               title="لوحة تحكم وإدارة السيرفر"
             >
@@ -197,6 +199,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <p className="text-[11px] font-mono text-cyan-400 mt-0.5 break-all" dir="ltr">ID: {user.discordId}</p>
                   </div>
 
+                  <button
+                    onClick={onOpenProfile}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-white hover:bg-cyan-500/15 hover:text-cyan-300 transition-colors text-right font-semibold cursor-pointer"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00e5ff]" />
+                    <span>عرض ملفي الشخصي والتقييم</span>
+                  </button>
+
                   {user.isAdmin && (
                     <button
                       onClick={() => onNavigate('admin')}
@@ -209,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <button
                     onClick={onLogout}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:bg-red-950/30 transition-colors text-right font-medium cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:bg-red-950/30 transition-colors text-right font-medium cursor-pointer border-t border-slate-800/80 mt-1"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>تسجيل الخروج</span>
@@ -247,7 +257,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="lg:hidden glass-panel border-t border-cyan-500/20 px-5 pt-4 pb-6 space-y-4 animate-in slide-in-from-top-2 duration-200 text-right">
           {/* User Status Card */}
           {user && (
-            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
+            <button
+              onClick={() => {
+                onOpenProfile();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md text-right hover:border-cyan-400/50 transition-colors cursor-pointer"
+            >
               <img
                 src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                 alt={user.username}
@@ -262,7 +278,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <div className="text-[11px] font-mono text-cyan-400 truncate" dir="ltr">ID: {user.discordId}</div>
               </div>
-            </div>
+              <span className="text-xs text-cyan-400 font-semibold">عرض الملف ←</span>
+            </button>
           )}
 
           {/* Navigation Items (48px comfortable touch targets) */}

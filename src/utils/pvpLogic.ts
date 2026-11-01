@@ -1,4 +1,10 @@
-import { WHITE_KINGDOM_TIERS, type TierDefinition, type LeaderboardPlayer, type PublicLeaderboardItem } from '../types/pvp.ts';
+import {
+  WHITE_KINGDOM_TIERS,
+  type TierDefinition,
+  type LeaderboardPlayer,
+  type PublicLeaderboardItem,
+  type ServerRole,
+} from '../types/pvp.ts';
 
 export { WHITE_KINGDOM_TIERS };
 
@@ -52,6 +58,37 @@ export function getTierRank(tierName: string, tierDefinitions: TierDefinition[] 
 }
 
 /**
+ * Retrieves full TierDefinition from tier name.
+ */
+export function getTierDefinition(tierName?: string, tierDefinitions: TierDefinition[] = WHITE_KINGDOM_TIERS): TierDefinition | undefined {
+  if (!tierName) return undefined;
+  const clean = tierName.trim().toUpperCase();
+  return tierDefinitions.find(t => t.name.toUpperCase() === clean);
+}
+
+/**
+ * Resolves an array of role IDs to their ServerRole objects preserving order.
+ */
+export function resolveUserRoles(assignedRoleIds: string[] = [], allRoles: ServerRole[] = []): ServerRole[] {
+  if (!Array.isArray(assignedRoleIds) || assignedRoleIds.length === 0) return [];
+  const roleMap = new Map<string, ServerRole>();
+  for (const role of allRoles) {
+    roleMap.set(role.id, role);
+    roleMap.set(role.name.toLowerCase(), role);
+  }
+
+  const resolved: ServerRole[] = [];
+  for (const id of assignedRoleIds) {
+    const match = roleMap.get(id) || roleMap.get(id.toLowerCase());
+    if (match && !resolved.some(r => r.id === match.id)) {
+      resolved.push(match);
+    }
+  }
+
+  return resolved.sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+/**
  * Formats leaderboard players into the ordered public view containing:
  * - rank
  * - minecraftName
@@ -84,3 +121,4 @@ export function formatPublicLeaderboard(players: LeaderboardPlayer[], tierDefini
     notes: p.notes || '',
   }));
 }
+

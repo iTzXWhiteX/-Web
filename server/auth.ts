@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { db } from './db.ts';
 import type { UserProfile } from '../src/types/pvp.ts';

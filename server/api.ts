@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -17,7 +18,13 @@ import {
   clearOAuthStateCookie,
   OAUTH_STATE_COOKIE_NAME,
 } from './auth.ts';
-import { validateDiscordId, resolveDiscordAvatar, getTierRank } from '../src/utils/pvpLogic.ts';
+import {
+  validateDiscordId,
+  resolveDiscordAvatar,
+  getTierRank,
+  getTierDefinition,
+  resolveUserRoles,
+} from '../src/utils/pvpLogic.ts';
 
 export const apiRouter = express.Router();
 
@@ -348,6 +355,25 @@ apiRouter.get('/auth/session', (req: Request, res: Response) => {
   res.json({
     authenticated: true,
     user,
+  });
+});
+
+// Authenticated user's full profile and resolved role badges
+apiRouter.get('/user/my-profile', (req: Request, res: Response) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'غير مصرح. يرجى تسجيل الدخول بحساب ديسكورد.' });
+    return;
+  }
+  const allRoles = db.getRoles();
+  const allTiers = db.getTiers();
+  const resolvedRoles = resolveUserRoles(user.assignedRoles, allRoles);
+  const tierDef = getTierDefinition(user.tier, allTiers);
+
+  res.json({
+    profile: user,
+    roles: resolvedRoles,
+    tierDefinition: tierDef,
   });
 });
 
@@ -895,4 +921,95 @@ apiRouter.post('/admin/upload', requireAdmin, async (req: Request, res: Response
     res.status(500).json({ error: 'حدث خطأ أثناء حفظ الصورة على السيرفر.' });
   }
 });
+
+// 7. Administrator Discord Profiles, Roles & Ratings Management
+// Allows admin to create/manage player profiles by Discord ID without requiring player to log in first!
+apiRouter.get('/admin/profiles', requireAdmin, (_req: Request, res: Response) => {
+  const profiles = db.getAllProfiles();
+  const roles = db.getRoles();
+  const tiers = db.getTiers();
+  res.json({ profiles, roles, tiers });
+});
+
+apiRouter.get('/admin/profiles/:discordId', requireAdmin, (req: Request, res: Response) => {
+  const { discordId } = req.params;
+  const profile = db.getProfile(discordId);
+  if (!profile) {
+    res.status(404).json({ error: 'الملف الشخصي غير موجود.' });
+    return;
+  }
+  res.json({ profile });
+});
+
+apiRouter.post('/admin/profiles', requireAdmin, async (req: Request, res: Response) => {
+  const { discordId, username, globalName, avatar, assignedRoles, tier, evaluationNotes } = req.body;
+  const validation = validateDiscordId(discordId);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+
+  const cleanId = String(discordId).trim();
+  const adminUser = getSessionUser(req);
+  const evaluatorName = adminUser?.globalName || adminUser?.username || 'الإدارة';
+
+  const profile = await db.upsertAdminProfile({
+    discordId: cleanId,
+    username: username ? String(username).trim() : undefined,
+    globalName: globalName ? String(globalName).trim() : undefined,
+    avatar: avatar ? String(avatar).trim() : undefined,
+    assignedRoles: Array.isArray(assignedRoles) ? assignedRoles.map(String) : [],
+    tier: tier ? String(tier).trim().toUpperCase() : undefined,
+    evaluationNotes: evaluationNotes ? String(evaluationNotes).trim() : undefined,
+    evaluatorName,
+  });
+
+  res.status(201).json({
+    success: true,
+    profile,
+    message: 'تم حفظ الملف الشخصي وتعيين الرولات والتقييم بنجاح.',
+  });
+});
+
+apiRouter.put('/admin/profiles/:discordId', requireAdmin, async (req: Request, res: Response) => {
+  const { discordId } = req.params;
+  const validation = validateDiscordId(discordId);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+
+  const cleanId = String(discordId).trim();
+  const { username, globalName, avatar, assignedRoles, tier, evaluationNotes } = req.body;
+  const adminUser = getSessionUser(req);
+  const evaluatorName = adminUser?.globalName || adminUser?.username || 'الإدارة';
+
+  const profile = await db.upsertAdminProfile({
+    discordId: cleanId,
+    username: username !== undefined ? String(username).trim() : undefined,
+    globalName: globalName !== undefined ? String(globalName).trim() : undefined,
+    avatar: avatar !== undefined ? String(avatar).trim() : undefined,
+    assignedRoles: Array.isArray(assignedRoles) ? assignedRoles.map(String) : undefined,
+    tier: tier !== undefined ? (tier ? String(tier).trim().toUpperCase() : '') : undefined,
+    evaluationNotes: evaluationNotes !== undefined ? String(evaluationNotes).trim() : undefined,
+    evaluatorName,
+  });
+
+  res.json({
+    success: true,
+    profile,
+    message: 'تم تحديث الملف الشخصي بنجاح.',
+  });
+});
+
+apiRouter.delete('/admin/profiles/:discordId', requireAdmin, async (req: Request, res: Response) => {
+  const { discordId } = req.params;
+  const deleted = await db.deleteProfile(discordId);
+  if (!deleted) {
+    res.status(404).json({ error: 'الملف الشخصي غير موجود.' });
+    return;
+  }
+  res.json({ success: true, message: 'تم حذف الملف الشخصي بنجاح.' });
+});
+
 
