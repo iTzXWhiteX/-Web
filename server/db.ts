@@ -13,6 +13,8 @@ import {
   WHITE_KINGDOM_TIERS,
   type NewsArticle,
   type ServerRole,
+  type TierTester,
+  type LoginLogEntry,
 } from '../src/types/pvp.ts';
 import {
   resolveDiscordAvatar,
@@ -32,10 +34,13 @@ export interface DatabaseSchema {
   adminDiscordIds: string[];
   settings: WebsiteSettings;
   testServers: TestServer[];
+  testers: TierTester[];
   leaderboard: LeaderboardPlayer[];
   newsArticles: NewsArticle[];
   roles: ServerRole[];
   tiers: TierDefinition[];
+  loginLogs: LoginLogEntry[];
+  discordProfileCache: Record<string, { username: string; displayName: string; avatar: string; cachedAt: string }>;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -156,6 +161,31 @@ const DEFAULT_SERVERS: TestServer[] = [
     name: 'Hypixel',
     info: 'Classic duels and tournament matches.',
     order: 3,
+  },
+];
+
+const DEFAULT_TESTERS: TierTester[] = [
+  {
+    id: 'tester_1',
+    discordId: '184719284719284719',
+    minecraftName: 'WhiteKnightMC',
+    discordDisplayName: 'WhiteKnight',
+    discordUsername: 'WhiteKnight',
+    discordAvatar: '/logo.png',
+    order: 1,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'tester_2',
+    discordId: '819203810293819201',
+    minecraftName: 'FrostByte_MC',
+    discordDisplayName: 'FrostByte',
+    discordUsername: 'FrostByte',
+    discordAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80',
+    order: 2,
+    createdAt: '2026-02-01T15:20:00.000Z',
+    updatedAt: '2026-02-01T15:20:00.000Z',
   },
 ];
 
@@ -401,6 +431,10 @@ class DatabaseManager {
       ? parsed.testServers
       : DEFAULT_SERVERS;
 
+    const testers: TierTester[] = Array.isArray(parsed?.testers) && parsed.testers.length > 0
+      ? parsed.testers
+      : DEFAULT_TESTERS;
+
     let leaderboard: LeaderboardPlayer[] = Array.isArray(parsed?.leaderboard) && parsed.leaderboard.length > 0
       ? parsed.leaderboard
       : [];
@@ -416,6 +450,14 @@ class DatabaseManager {
     const tiers: TierDefinition[] = Array.isArray(parsed?.tiers) && parsed.tiers.length > 0
       ? parsed.tiers
       : WHITE_KINGDOM_TIERS;
+
+    const loginLogs: LoginLogEntry[] = Array.isArray(parsed?.loginLogs)
+      ? parsed.loginLogs
+      : [];
+
+    const discordProfileCache = parsed?.discordProfileCache && typeof parsed.discordProfileCache === 'object'
+      ? parsed.discordProfileCache
+      : {};
 
     // Migrate old tierTests if leaderboard empty
     if (leaderboard.length === 0 && parsed?.tierTests) {
@@ -458,6 +500,8 @@ class DatabaseManager {
         bio: u?.bio || '',
         createdAt: u?.createdAt || new Date().toISOString(),
         lastLogin: u?.lastLogin,
+        loginCount: typeof u?.loginCount === 'number' ? u.loginCount : (u?.lastLogin ? 1 : 0),
+        minecraftName: u?.minecraftName || undefined,
         isAdmin: !!u?.isAdmin,
         assignedRoles: Array.isArray(u?.assignedRoles) ? u.assignedRoles : [],
         tier: u?.tier ? String(u.tier).trim().toUpperCase() : undefined,
@@ -473,10 +517,13 @@ class DatabaseManager {
       adminDiscordIds: parsed?.adminDiscordIds || ['1324725244073873539', '184719284719284719'],
       settings,
       testServers,
+      testers,
       leaderboard,
       newsArticles,
       roles,
       tiers,
+      loginLogs,
+      discordProfileCache,
     };
   }
 
@@ -500,10 +547,13 @@ class DatabaseManager {
       adminDiscordIds: ['1324725244073873539', '184719284719284719'],
       settings: DEFAULT_SETTINGS,
       testServers: DEFAULT_SERVERS,
+      testers: DEFAULT_TESTERS,
       leaderboard: DEFAULT_LEADERBOARD,
       newsArticles: DEFAULT_NEWS,
       roles: DEFAULT_ROLES,
       tiers: WHITE_KINGDOM_TIERS,
+      loginLogs: [],
+      discordProfileCache: {},
     };
 
     this.saveDatabaseSync(initial);
@@ -774,6 +824,8 @@ class DatabaseManager {
       bio: profile.bio ?? existing?.bio ?? '',
       createdAt: existing?.createdAt || new Date().toISOString(),
       lastLogin: new Date().toISOString(),
+      loginCount: (existing?.loginCount || 0) + 1,
+      minecraftName: existing?.minecraftName || profile.minecraftName,
       isAdmin,
       assignedRoles: existing?.assignedRoles || profile.assignedRoles || [],
       tier: existing?.tier || profile.tier,
@@ -1010,6 +1062,185 @@ class DatabaseManager {
       return true;
     }
     return false;
+  }
+
+  // --- Tier Testers ---
+  public getTesters(): TierTester[] {
+    return [...this.data.testers].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  public async addTester(tester: {
+    discordId: string;
+    minecraftName: string;
+    discordUsername?: string;
+    discordDisplayName?: string;
+    discordAvatar?: string;
+    specialty?: string;
+    order?: number;
+    notes?: string;
+  }): Promise<TierTester> {
+    const id = `tester_${Date.now()}`;
+    const cleanId = tester.discordId.trim();
+    const user = this.data.users[cleanId];
+    const resolvedAvatar = tester.discordAvatar || user?.avatar || resolveDiscordAvatar(cleanId);
+    const resolvedName = tester.discordDisplayName || user?.globalName || user?.username || tester.discordUsername || `Tester_${cleanId.slice(-4)}`;
+    const resolvedUsername = tester.discordUsername || user?.username || resolvedName;
+
+    const newTester: TierTester = {
+      id,
+      discordId: cleanId,
+      minecraftName: tester.minecraftName.trim(),
+      discordUsername: resolvedUsername,
+      discordDisplayName: resolvedName,
+      discordAvatar: resolvedAvatar,
+      specialty: tester.specialty?.trim() || undefined,
+      order: tester.order ?? (this.data.testers.length + 1),
+      notes: tester.notes?.trim() || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.data.testers.push(newTester);
+    await this.save();
+    return newTester;
+  }
+
+  public async updateTester(id: string, updates: Partial<TierTester>): Promise<TierTester | null> {
+    const idx = this.data.testers.findIndex(t => t.id === id);
+    if (idx === -1) return null;
+
+    this.data.testers[idx] = {
+      ...this.data.testers[idx],
+      ...updates,
+      id,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.save();
+    return this.data.testers[idx];
+  }
+
+  public async deleteTester(id: string): Promise<boolean> {
+    const initialLen = this.data.testers.length;
+    this.data.testers = this.data.testers.filter(t => t.id !== id);
+    if (this.data.testers.length !== initialLen) {
+      await this.save();
+      return true;
+    }
+    return false;
+  }
+
+  public async reorderTesters(orderedIds: string[]): Promise<TierTester[]> {
+    const idToTester = new Map(this.data.testers.map(t => [t.id, t]));
+    const reordered: TierTester[] = [];
+
+    orderedIds.forEach((id, index) => {
+      const tester = idToTester.get(id);
+      if (tester) {
+        tester.order = index + 1;
+        tester.updatedAt = new Date().toISOString();
+        reordered.push(tester);
+        idToTester.delete(id);
+      }
+    });
+
+    for (const remaining of idToTester.values()) {
+      remaining.order = reordered.length + 1;
+      reordered.push(remaining);
+    }
+
+    this.data.testers = reordered;
+    await this.save();
+    return this.getTesters();
+  }
+
+  // --- Login Logs & User Tracking ---
+  public getLoginLogs(): LoginLogEntry[] {
+    return [...this.data.loginLogs].sort((a, b) => new Date(b.loginAt).getTime() - new Date(a.loginAt).getTime());
+  }
+
+  public async recordLogin(user: {
+    discordId: string;
+    username: string;
+    globalName?: string;
+    avatar?: string;
+    discriminator?: string;
+    email?: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<void> {
+    const logId = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const now = new Date().toISOString();
+
+    const existingUser = this.data.users[user.discordId];
+    const previousCount = existingUser?.loginCount || 0;
+    const newCount = previousCount + 1;
+
+    // Update user record
+    if (existingUser) {
+      existingUser.loginCount = newCount;
+      existingUser.lastLogin = now;
+      if (user.avatar) existingUser.avatar = user.avatar;
+      if (user.username) existingUser.username = user.username;
+      if (user.globalName) existingUser.globalName = user.globalName;
+    }
+
+    const logEntry: LoginLogEntry = {
+      id: logId,
+      discordId: user.discordId,
+      username: user.username,
+      displayName: user.globalName || user.username,
+      avatar: user.avatar || resolveDiscordAvatar(user.discordId),
+      loginAt: now,
+      loginCount: newCount,
+      ipAddress: user.ipAddress,
+      userAgent: user.userAgent,
+      minecraftName: existingUser?.minecraftName,
+    };
+
+    this.data.loginLogs.unshift(logEntry);
+    if (this.data.loginLogs.length > 500) {
+      this.data.loginLogs = this.data.loginLogs.slice(0, 500);
+    }
+
+    // Cache profile for offline access
+    this.data.discordProfileCache[user.discordId] = {
+      username: user.username,
+      displayName: user.globalName || user.username,
+      avatar: user.avatar || resolveDiscordAvatar(user.discordId),
+      cachedAt: now,
+    };
+
+    await this.save();
+  }
+
+  public async updateUserMinecraftName(discordId: string, minecraftName: string): Promise<UserProfile | null> {
+    const user = this.data.users[discordId.trim()];
+    if (!user) return null;
+    user.minecraftName = minecraftName.trim() || undefined;
+
+    // Synchronize to login logs
+    for (const log of this.data.loginLogs) {
+      if (log.discordId === discordId.trim()) {
+        log.minecraftName = user.minecraftName;
+      }
+    }
+
+    await this.save();
+    return user;
+  }
+
+  // --- Discord Profile Cache ---
+  public getCachedDiscordProfile(discordId: string): { username: string; displayName: string; avatar: string; cachedAt: string } | null {
+    return this.data.discordProfileCache[discordId.trim()] || null;
+  }
+
+  public async cacheDiscordProfile(discordId: string, profile: { username: string; displayName: string; avatar: string }): Promise<void> {
+    this.data.discordProfileCache[discordId.trim()] = {
+      ...profile,
+      cachedAt: new Date().toISOString(),
+    };
+    await this.save();
   }
 
   public async close(): Promise<void> {

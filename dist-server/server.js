@@ -233,6 +233,30 @@ var DEFAULT_SERVERS = [
     order: 3
   }
 ];
+var DEFAULT_TESTERS = [
+  {
+    id: "tester_1",
+    discordId: "184719284719284719",
+    minecraftName: "WhiteKnightMC",
+    discordDisplayName: "WhiteKnight",
+    discordUsername: "WhiteKnight",
+    discordAvatar: "/logo.png",
+    order: 1,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z"
+  },
+  {
+    id: "tester_2",
+    discordId: "819203810293819201",
+    minecraftName: "FrostByte_MC",
+    discordDisplayName: "FrostByte",
+    discordUsername: "FrostByte",
+    discordAvatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
+    order: 2,
+    createdAt: "2026-02-01T15:20:00.000Z",
+    updatedAt: "2026-02-01T15:20:00.000Z"
+  }
+];
 var DEFAULT_USERS = {
   "184719284719284719": {
     id: "user_white_knight",
@@ -448,10 +472,13 @@ var DatabaseManager = class {
       welcomeBadgeText: parsed?.settings?.welcomeBadgeText || DEFAULT_SETTINGS.welcomeBadgeText
     };
     const testServers = Array.isArray(parsed?.testServers) && parsed.testServers.length > 0 ? parsed.testServers : DEFAULT_SERVERS;
+    const testers = Array.isArray(parsed?.testers) && parsed.testers.length > 0 ? parsed.testers : DEFAULT_TESTERS;
     let leaderboard = Array.isArray(parsed?.leaderboard) && parsed.leaderboard.length > 0 ? parsed.leaderboard : [];
     const newsArticles = Array.isArray(parsed?.newsArticles) && parsed.newsArticles.length > 0 ? parsed.newsArticles : DEFAULT_NEWS;
     const roles = Array.isArray(parsed?.roles) && parsed.roles.length > 0 ? parsed.roles : DEFAULT_ROLES;
     const tiers = Array.isArray(parsed?.tiers) && parsed.tiers.length > 0 ? parsed.tiers : WHITE_KINGDOM_TIERS;
+    const loginLogs = Array.isArray(parsed?.loginLogs) ? parsed.loginLogs : [];
+    const discordProfileCache = parsed?.discordProfileCache && typeof parsed.discordProfileCache === "object" ? parsed.discordProfileCache : {};
     if (leaderboard.length === 0 && parsed?.tierTests) {
       const testRecords = Object.values(parsed.tierTests);
       const seen = /* @__PURE__ */ new Set();
@@ -490,6 +517,8 @@ var DatabaseManager = class {
         bio: u?.bio || "",
         createdAt: u?.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
         lastLogin: u?.lastLogin,
+        loginCount: typeof u?.loginCount === "number" ? u.loginCount : u?.lastLogin ? 1 : 0,
+        minecraftName: u?.minecraftName || void 0,
         isAdmin: !!u?.isAdmin,
         assignedRoles: Array.isArray(u?.assignedRoles) ? u.assignedRoles : [],
         tier: u?.tier ? String(u.tier).trim().toUpperCase() : void 0,
@@ -504,10 +533,13 @@ var DatabaseManager = class {
       adminDiscordIds: parsed?.adminDiscordIds || ["1324725244073873539", "184719284719284719"],
       settings,
       testServers,
+      testers,
       leaderboard,
       newsArticles,
       roles,
-      tiers
+      tiers,
+      loginLogs,
+      discordProfileCache
     };
   }
   loadDatabaseFromFile() {
@@ -528,10 +560,13 @@ var DatabaseManager = class {
       adminDiscordIds: ["1324725244073873539", "184719284719284719"],
       settings: DEFAULT_SETTINGS,
       testServers: DEFAULT_SERVERS,
+      testers: DEFAULT_TESTERS,
       leaderboard: DEFAULT_LEADERBOARD,
       newsArticles: DEFAULT_NEWS,
       roles: DEFAULT_ROLES,
-      tiers: WHITE_KINGDOM_TIERS
+      tiers: WHITE_KINGDOM_TIERS,
+      loginLogs: [],
+      discordProfileCache: {}
     };
     this.saveDatabaseSync(initial);
     return initial;
@@ -753,6 +788,8 @@ var DatabaseManager = class {
       bio: profile.bio ?? existing?.bio ?? "",
       createdAt: existing?.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
       lastLogin: (/* @__PURE__ */ new Date()).toISOString(),
+      loginCount: (existing?.loginCount || 0) + 1,
+      minecraftName: existing?.minecraftName || profile.minecraftName,
       isAdmin,
       assignedRoles: existing?.assignedRoles || profile.assignedRoles || [],
       tier: existing?.tier || profile.tier,
@@ -947,6 +984,139 @@ var DatabaseManager = class {
     }
     return false;
   }
+  // --- Tier Testers ---
+  getTesters() {
+    return [...this.data.testers].sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+  async addTester(tester) {
+    const id = `tester_${Date.now()}`;
+    const cleanId = tester.discordId.trim();
+    const user = this.data.users[cleanId];
+    const resolvedAvatar = tester.discordAvatar || user?.avatar || resolveDiscordAvatar(cleanId);
+    const resolvedName = tester.discordDisplayName || user?.globalName || user?.username || tester.discordUsername || `Tester_${cleanId.slice(-4)}`;
+    const resolvedUsername = tester.discordUsername || user?.username || resolvedName;
+    const newTester = {
+      id,
+      discordId: cleanId,
+      minecraftName: tester.minecraftName.trim(),
+      discordUsername: resolvedUsername,
+      discordDisplayName: resolvedName,
+      discordAvatar: resolvedAvatar,
+      specialty: tester.specialty?.trim() || void 0,
+      order: tester.order ?? this.data.testers.length + 1,
+      notes: tester.notes?.trim() || void 0,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    this.data.testers.push(newTester);
+    await this.save();
+    return newTester;
+  }
+  async updateTester(id, updates) {
+    const idx = this.data.testers.findIndex((t) => t.id === id);
+    if (idx === -1) return null;
+    this.data.testers[idx] = {
+      ...this.data.testers[idx],
+      ...updates,
+      id,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    await this.save();
+    return this.data.testers[idx];
+  }
+  async deleteTester(id) {
+    const initialLen = this.data.testers.length;
+    this.data.testers = this.data.testers.filter((t) => t.id !== id);
+    if (this.data.testers.length !== initialLen) {
+      await this.save();
+      return true;
+    }
+    return false;
+  }
+  async reorderTesters(orderedIds) {
+    const idToTester = new Map(this.data.testers.map((t) => [t.id, t]));
+    const reordered = [];
+    orderedIds.forEach((id, index) => {
+      const tester = idToTester.get(id);
+      if (tester) {
+        tester.order = index + 1;
+        tester.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+        reordered.push(tester);
+        idToTester.delete(id);
+      }
+    });
+    for (const remaining of idToTester.values()) {
+      remaining.order = reordered.length + 1;
+      reordered.push(remaining);
+    }
+    this.data.testers = reordered;
+    await this.save();
+    return this.getTesters();
+  }
+  // --- Login Logs & User Tracking ---
+  getLoginLogs() {
+    return [...this.data.loginLogs].sort((a, b) => new Date(b.loginAt).getTime() - new Date(a.loginAt).getTime());
+  }
+  async recordLogin(user) {
+    const logId = `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    const existingUser = this.data.users[user.discordId];
+    const previousCount = existingUser?.loginCount || 0;
+    const newCount = previousCount + 1;
+    if (existingUser) {
+      existingUser.loginCount = newCount;
+      existingUser.lastLogin = now;
+      if (user.avatar) existingUser.avatar = user.avatar;
+      if (user.username) existingUser.username = user.username;
+      if (user.globalName) existingUser.globalName = user.globalName;
+    }
+    const logEntry = {
+      id: logId,
+      discordId: user.discordId,
+      username: user.username,
+      displayName: user.globalName || user.username,
+      avatar: user.avatar || resolveDiscordAvatar(user.discordId),
+      loginAt: now,
+      loginCount: newCount,
+      ipAddress: user.ipAddress,
+      userAgent: user.userAgent,
+      minecraftName: existingUser?.minecraftName
+    };
+    this.data.loginLogs.unshift(logEntry);
+    if (this.data.loginLogs.length > 500) {
+      this.data.loginLogs = this.data.loginLogs.slice(0, 500);
+    }
+    this.data.discordProfileCache[user.discordId] = {
+      username: user.username,
+      displayName: user.globalName || user.username,
+      avatar: user.avatar || resolveDiscordAvatar(user.discordId),
+      cachedAt: now
+    };
+    await this.save();
+  }
+  async updateUserMinecraftName(discordId, minecraftName) {
+    const user = this.data.users[discordId.trim()];
+    if (!user) return null;
+    user.minecraftName = minecraftName.trim() || void 0;
+    for (const log of this.data.loginLogs) {
+      if (log.discordId === discordId.trim()) {
+        log.minecraftName = user.minecraftName;
+      }
+    }
+    await this.save();
+    return user;
+  }
+  // --- Discord Profile Cache ---
+  getCachedDiscordProfile(discordId) {
+    return this.data.discordProfileCache[discordId.trim()] || null;
+  }
+  async cacheDiscordProfile(discordId, profile) {
+    this.data.discordProfileCache[discordId.trim()] = {
+      ...profile,
+      cachedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    await this.save();
+  }
   async close() {
     if (this.pool) {
       await this.pool.end();
@@ -1115,6 +1285,7 @@ apiRouter.get("/config", (req, res) => {
 apiRouter.get("/public-data", (req, res) => {
   const settings = db.getSettings();
   const testServers = db.getTestServers();
+  const testers = db.getTesters();
   const leaderboard = db.getLeaderboardPublic();
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
@@ -1122,11 +1293,16 @@ apiRouter.get("/public-data", (req, res) => {
   res.json({
     settings,
     testServers,
+    testers,
     leaderboard,
     newsArticles,
     roles,
     tiers
   });
+});
+apiRouter.get("/testers", (req, res) => {
+  const testers = db.getTesters();
+  res.json({ testers });
 });
 apiRouter.get("/tiers", (req, res) => {
   const tiers = db.getTiers();
@@ -1275,6 +1451,18 @@ async function handleDiscordCallback(req, res) {
       discriminator: discordUser.discriminator,
       email: discordUser.email
     });
+    const ipAddress = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress;
+    const userAgent = req.headers["user-agent"] || void 0;
+    await db.recordLogin({
+      discordId: discordUser.id,
+      username: discordUser.username,
+      globalName: discordUser.global_name,
+      avatar: avatarUrl,
+      discriminator: discordUser.discriminator,
+      email: discordUser.email,
+      ipAddress,
+      userAgent
+    });
     if (db.isAdmin(user.discordId)) {
       await db.updateSettings({
         ownerDiscordId: user.discordId,
@@ -1329,6 +1517,10 @@ async function handleDiscordCallback(req, res) {
   }
 }
 apiRouter.post("/auth/dev-login", async (req, res) => {
+  if (process.env.NODE_ENV === "production" && !process.env.ALLOW_DEV_LOGIN) {
+    res.status(403).json({ error: "\u062A\u0645 \u062A\u0639\u0637\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u062A\u062C\u0631\u064A\u0628\u064A \u0641\u064A \u0628\u064A\u0626\u0629 \u0627\u0644\u062A\u0634\u063A\u064A\u0644. \u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0627\u0644\u0631\u0633\u0645\u064A \u0639\u0628\u0631 \u062F\u064A\u0633\u0643\u0648\u0631\u062F." });
+    return;
+  }
   const { discordId, username, asAdmin } = req.body;
   const validation = validateDiscordId(discordId);
   if (!validation.valid) {
@@ -1388,19 +1580,23 @@ apiRouter.get("/user/my-profile", (req, res) => {
 apiRouter.get("/admin/data", requireAdmin, (req, res) => {
   const settings = db.getSettings();
   const testServers = db.getTestServers();
+  const testers = db.getTesters();
   const leaderboard = db.getLeaderboardPlayersAdmin();
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
   const users = db.getAllUsers();
   const tiers = db.getTiers();
+  const loginLogs = db.getLoginLogs();
   res.json({
     settings,
     testServers,
+    testers,
     leaderboard,
     newsArticles,
     roles,
     users,
-    tiers
+    tiers,
+    loginLogs
   });
 });
 apiRouter.patch("/admin/settings", requireAdmin, async (req, res) => {
@@ -1567,14 +1763,29 @@ apiRouter.get("/admin/discord-lookup/:discordId", requireAdmin, async (req, res)
     return;
   }
   const cleanId = discordId.trim();
-  const existingUser = db.getUser(cleanId);
-  if (existingUser && existingUser.avatar && !existingUser.avatar.includes("/embed/avatars/")) {
+  const cachedProfile = db.getCachedDiscordProfile(cleanId);
+  if (cachedProfile && cachedProfile.username) {
     res.json({
       found: true,
-      source: "database_user",
+      source: "database_cache",
+      username: cachedProfile.username,
+      displayName: cachedProfile.displayName || cachedProfile.username,
+      avatar: cachedProfile.avatar
+    });
+    return;
+  }
+  const existingUser = db.getUser(cleanId);
+  if (existingUser && existingUser.username && existingUser.avatar && !existingUser.avatar.includes("/embed/avatars/")) {
+    const profile = {
       username: existingUser.username,
       displayName: existingUser.globalName || existingUser.username,
       avatar: existingUser.avatar
+    };
+    await db.cacheDiscordProfile(cleanId, profile);
+    res.json({
+      found: true,
+      source: "database_user",
+      ...profile
     });
     return;
   }
@@ -1594,12 +1805,16 @@ apiRouter.get("/admin/discord-lookup/:discordId", requireAdmin, async (req, res)
         } else {
           avatarUrl = resolveDiscordAvatar(cleanId);
         }
-        res.json({
-          found: true,
-          source: "discord_bot_api",
+        const profile = {
           username: d.username,
           displayName: d.global_name || d.username,
           avatar: avatarUrl
+        };
+        await db.cacheDiscordProfile(cleanId, profile);
+        res.json({
+          found: true,
+          source: "discord_bot_api",
+          ...profile
         });
         return;
       }
@@ -1613,44 +1828,56 @@ apiRouter.get("/admin/discord-lookup/:discordId", requireAdmin, async (req, res)
         "User-Agent": "WhiteKingdom-PvP/1.0",
         "Accept": "application/json"
       },
-      signal: AbortSignal.timeout(5e3)
+      signal: AbortSignal.timeout(4e3)
     });
     if (japiResp.ok) {
       const jdata = await japiResp.json();
       if (jdata?.data && !jdata.data.message && jdata.data.username) {
         const d = jdata.data;
         const avatarUrl = d.avatarURL || resolveDiscordAvatar(cleanId);
+        const profile = {
+          username: d.username,
+          displayName: d.global_name || d.username,
+          avatar: avatarUrl
+        };
+        await db.cacheDiscordProfile(cleanId, profile);
         res.json({
           found: true,
           source: "discord_public_api",
-          username: d.username,
-          displayName: d.global_name || d.username,
-          avatar: avatarUrl,
+          ...profile,
           banner: d.bannerURL || null
         });
         return;
       }
     }
   } catch (err) {
-    console.warn("japi lookup failed:", err);
+    console.warn("Public resolver lookup failed:", err);
   }
   if (existingUser) {
+    const profile = {
+      username: existingUser.username,
+      displayName: existingUser.globalName || existingUser.username,
+      avatar: existingUser.avatar || resolveDiscordAvatar(cleanId)
+    };
+    await db.cacheDiscordProfile(cleanId, profile);
     res.json({
       found: true,
       source: "database_user",
-      username: existingUser.username,
-      displayName: existingUser.globalName || existingUser.username,
-      avatar: existingUser.avatar
+      ...profile
     });
     return;
   }
   const fallbackAvatar = resolveDiscordAvatar(cleanId);
+  const fallbackProfile = {
+    username: `user_${cleanId.slice(-4)}`,
+    displayName: `User ${cleanId.slice(-4)}`,
+    avatar: fallbackAvatar
+  };
+  await db.cacheDiscordProfile(cleanId, fallbackProfile);
   res.json({
     found: true,
-    source: "discord_cdn",
-    username: `user_${cleanId.slice(-4)}`,
-    displayName: `Player ${cleanId.slice(-4)}`,
-    avatar: fallbackAvatar
+    source: "discord_cdn_deterministic",
+    ...fallbackProfile
   });
 });
 apiRouter.post("/admin/roles", requireAdmin, async (req, res) => {
@@ -1922,6 +2149,94 @@ apiRouter.delete("/admin/profiles/:discordId", requireAdmin, async (req, res) =>
     return;
   }
   res.json({ success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A \u0628\u0646\u062C\u0627\u062D." });
+});
+apiRouter.post("/admin/testers", requireAdmin, async (req, res) => {
+  const { discordId, minecraftName, discordUsername, discordDisplayName, discordAvatar, specialty, order, notes } = req.body;
+  if (!minecraftName || typeof minecraftName !== "string" || !minecraftName.trim()) {
+    res.status(400).json({ error: "\u0627\u0633\u0645 \u0627\u0644\u0644\u0627\u0639\u0628 \u0641\u064A \u0645\u0627\u064A\u0646 \u0643\u0631\u0627\u0641\u062A (Minecraft IGN) \u0645\u0637\u0644\u0648\u0628." });
+    return;
+  }
+  const validation = validateDiscordId(discordId);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+  const newTester = await db.addTester({
+    discordId: String(discordId).trim(),
+    minecraftName: String(minecraftName).trim(),
+    discordUsername: discordUsername ? String(discordUsername).trim() : void 0,
+    discordDisplayName: discordDisplayName ? String(discordDisplayName).trim() : void 0,
+    discordAvatar: discordAvatar ? String(discordAvatar).trim() : void 0,
+    specialty: specialty ? String(specialty).trim() : void 0,
+    order: typeof order === "number" ? order : void 0,
+    notes: notes ? String(notes).trim() : void 0
+  });
+  res.status(201).json({
+    success: true,
+    tester: newTester,
+    testers: db.getTesters(),
+    message: "\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0645\u062E\u062A\u0628\u0631 \u0627\u0644\u0631\u0633\u0645\u064A \u0628\u0646\u062C\u0627\u062D."
+  });
+});
+apiRouter.put("/admin/testers/:id", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  const updated = await db.updateTester(id, updates);
+  if (!updated) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u062E\u062A\u0628\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+    return;
+  }
+  res.json({
+    success: true,
+    tester: updated,
+    testers: db.getTesters(),
+    message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u062E\u062A\u0628\u0631 \u0628\u0646\u062C\u0627\u062D."
+  });
+});
+apiRouter.delete("/admin/testers/:id", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const deleted = await db.deleteTester(id);
+  if (!deleted) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u062E\u062A\u0628\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F." });
+    return;
+  }
+  res.json({
+    success: true,
+    testers: db.getTesters(),
+    message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u062E\u062A\u0628\u0631 \u0628\u0646\u062C\u0627\u062D."
+  });
+});
+apiRouter.post("/admin/testers/reorder", requireAdmin, async (req, res) => {
+  const { orderedIds } = req.body;
+  if (!Array.isArray(orderedIds)) {
+    res.status(400).json({ error: "\u0642\u0627\u0626\u0645\u0629 \u062A\u0631\u062A\u064A\u0628 \u0627\u0644\u0645\u062E\u062A\u0628\u0631\u064A\u0646 \u0645\u0637\u0644\u0648\u0628\u0629." });
+    return;
+  }
+  const testers = await db.reorderTesters(orderedIds);
+  res.json({
+    success: true,
+    testers,
+    message: "\u062A\u0645 \u062D\u0641\u0638 \u062A\u0631\u062A\u064A\u0628 \u0627\u0644\u0645\u062E\u062A\u0628\u0631\u064A\u0646 \u0628\u0646\u062C\u0627\u062D."
+  });
+});
+apiRouter.get("/admin/login-logs", requireAdmin, (_req, res) => {
+  const logs = db.getLoginLogs();
+  const users = db.getAllUsers();
+  res.json({ logs, users });
+});
+apiRouter.patch("/admin/users/:discordId/minecraft-name", requireAdmin, async (req, res) => {
+  const { discordId } = req.params;
+  const { minecraftName } = req.body;
+  const updated = await db.updateUserMinecraftName(discordId, String(minecraftName || ""));
+  if (!updated) {
+    res.status(404).json({ error: "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A." });
+    return;
+  }
+  res.json({
+    success: true,
+    user: updated,
+    message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0633\u0645 \u062D\u0633\u0627\u0628 \u0645\u0627\u064A\u0646 \u0643\u0631\u0627\u0641\u062A \u0628\u0646\u062C\u0627\u062D."
+  });
 });
 
 // server/serverApp.ts

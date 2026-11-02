@@ -47,6 +47,7 @@ apiRouter.get('/config', (req: Request, res: Response) => {
 apiRouter.get('/public-data', (req: Request, res: Response) => {
   const settings = db.getSettings();
   const testServers = db.getTestServers();
+  const testers = db.getTesters();
   const leaderboard = db.getLeaderboardPublic();
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
@@ -55,11 +56,17 @@ apiRouter.get('/public-data', (req: Request, res: Response) => {
   res.json({
     settings,
     testServers,
+    testers,
     leaderboard,
     newsArticles,
     roles,
     tiers,
   });
+});
+
+apiRouter.get('/testers', (req: Request, res: Response) => {
+  const testers = db.getTesters();
+  res.json({ testers });
 });
 
 apiRouter.get('/tiers', (req: Request, res: Response) => {
@@ -249,6 +256,20 @@ export async function handleDiscordCallback(req: Request, res: Response): Promis
       email: discordUser.email,
     });
 
+    // Record login entry in persistent database
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress;
+    const userAgent = (req.headers['user-agent'] as string) || undefined;
+    await db.recordLogin({
+      discordId: discordUser.id,
+      username: discordUser.username,
+      globalName: discordUser.global_name,
+      avatar: avatarUrl,
+      discriminator: discordUser.discriminator,
+      email: discordUser.email,
+      ipAddress,
+      userAgent,
+    });
+
     // If the authenticated user is an admin, automatically synchronize the owner profile info
     if (db.isAdmin(user.discordId)) {
       await db.updateSettings({
@@ -308,8 +329,13 @@ export async function handleDiscordCallback(req: Request, res: Response): Promis
   }
 }
 
-// Development / Testing Instant Login endpoint
+// Development / Testing Instant Login endpoint (Strictly disabled in production)
 apiRouter.post('/auth/dev-login', async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_DEV_LOGIN) {
+    res.status(403).json({ error: 'تم تعطيل الدخول التجريبي في بيئة التشغيل. يرجى تسجيل الدخول الرسمي عبر ديسكورد.' });
+    return;
+  }
+
   const { discordId, username, asAdmin } = req.body;
   const validation = validateDiscordId(discordId);
   if (!validation.valid) {
@@ -385,20 +411,24 @@ apiRouter.get('/user/my-profile', (req: Request, res: Response) => {
 apiRouter.get('/admin/data', requireAdmin, (req: Request, res: Response) => {
   const settings = db.getSettings();
   const testServers = db.getTestServers();
+  const testers = db.getTesters();
   const leaderboard = db.getLeaderboardPlayersAdmin();
   const newsArticles = db.getNewsArticles();
   const roles = db.getRoles();
   const users = db.getAllUsers();
   const tiers = db.getTiers();
+  const loginLogs = db.getLoginLogs();
 
   res.json({
     settings,
     testServers,
+    testers,
     leaderboard,
     newsArticles,
     roles,
     users,
     tiers,
+    loginLogs,
   });
 });
 
@@ -593,7 +623,7 @@ apiRouter.delete('/admin/leaderboard/:id', requireAdmin, async (req: Request, re
   res.json({ success: true, message: 'Player removed from leaderboard.' });
 });
 
-// Helper for admin to lookup Discord User info from snowflake ID
+// Helper for admin to lookup Discord User info from snowflake ID (supports offline & invisible users)
 apiRouter.get('/admin/discord-lookup/:discordId', requireAdmin, async (req: Request, res: Response) => {
   const { discordId } = req.params;
   const validation = validateDiscordId(discordId);
@@ -604,20 +634,37 @@ apiRouter.get('/admin/discord-lookup/:discordId', requireAdmin, async (req: Requ
 
   const cleanId = discordId.trim();
 
-  // 1. Check if user already exists in persistent database
-  const existingUser = db.getUser(cleanId);
-  if (existingUser && existingUser.avatar && !existingUser.avatar.includes('/embed/avatars/')) {
+  // 1. Check persistent database cache first
+  const cachedProfile = db.getCachedDiscordProfile(cleanId);
+  if (cachedProfile && cachedProfile.username) {
     res.json({
       found: true,
-      source: 'database_user',
-      username: existingUser.username,
-      displayName: existingUser.globalName || existingUser.username,
-      avatar: existingUser.avatar,
+      source: 'database_cache',
+      username: cachedProfile.username,
+      displayName: cachedProfile.displayName || cachedProfile.username,
+      avatar: cachedProfile.avatar,
     });
     return;
   }
 
-  // 2. Check if Discord Bot token is available in environment
+  // 2. Check if user already exists in persistent database
+  const existingUser = db.getUser(cleanId);
+  if (existingUser && existingUser.username && existingUser.avatar && !existingUser.avatar.includes('/embed/avatars/')) {
+    const profile = {
+      username: existingUser.username,
+      displayName: existingUser.globalName || existingUser.username,
+      avatar: existingUser.avatar,
+    };
+    await db.cacheDiscordProfile(cleanId, profile);
+    res.json({
+      found: true,
+      source: 'database_user',
+      ...profile,
+    });
+    return;
+  }
+
+  // 3. Check if Discord Bot token is available in environment
   const botToken = process.env.DISCORD_BOT_TOKEN;
   if (botToken) {
     try {
@@ -634,12 +681,16 @@ apiRouter.get('/admin/discord-lookup/:discordId', requireAdmin, async (req: Requ
         } else {
           avatarUrl = resolveDiscordAvatar(cleanId);
         }
-        res.json({
-          found: true,
-          source: 'discord_bot_api',
+        const profile = {
           username: d.username,
           displayName: d.global_name || d.username,
           avatar: avatarUrl,
+        };
+        await db.cacheDiscordProfile(cleanId, profile);
+        res.json({
+          found: true,
+          source: 'discord_bot_api',
+          ...profile,
         });
         return;
       }
@@ -648,55 +699,68 @@ apiRouter.get('/admin/discord-lookup/:discordId', requireAdmin, async (req: Requ
     }
   }
 
-  // 3. Query high-reliability public Discord user profile resolver
+  // 4. Query public Discord user profile resolver
   try {
     const japiResp = await fetch(`https://japi.rest/discord/v1/user/${cleanId}`, {
       headers: {
         'User-Agent': 'WhiteKingdom-PvP/1.0',
         'Accept': 'application/json',
       },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(4000),
     });
     if (japiResp.ok) {
       const jdata = await japiResp.json() as any;
       if (jdata?.data && !jdata.data.message && jdata.data.username) {
         const d = jdata.data;
         const avatarUrl = d.avatarURL || resolveDiscordAvatar(cleanId);
-        res.json({
-          found: true,
-          source: 'discord_public_api',
+        const profile = {
           username: d.username,
           displayName: d.global_name || d.username,
           avatar: avatarUrl,
+        };
+        await db.cacheDiscordProfile(cleanId, profile);
+        res.json({
+          found: true,
+          source: 'discord_public_api',
+          ...profile,
           banner: d.bannerURL || null,
         });
         return;
       }
     }
   } catch (err) {
-    console.warn('japi lookup failed:', err);
+    console.warn('Public resolver lookup failed:', err);
   }
 
-  // 4. Secondary fallback: check existingUser even if fallback avatar
+  // 5. Existing user record fallback even if default avatar
   if (existingUser) {
+    const profile = {
+      username: existingUser.username,
+      displayName: existingUser.globalName || existingUser.username,
+      avatar: existingUser.avatar || resolveDiscordAvatar(cleanId),
+    };
+    await db.cacheDiscordProfile(cleanId, profile);
     res.json({
       found: true,
       source: 'database_user',
-      username: existingUser.username,
-      displayName: existingUser.globalName || existingUser.username,
-      avatar: existingUser.avatar,
+      ...profile,
     });
     return;
   }
 
-  // 5. Mathematical fallback using Discord CDN avatar algorithm
+  // 6. Mathematical deterministic fallback for offline / unreachable users
+  // Formula: (BigInt(discordId) >> 22n) % 6n guarantees exact Discord default avatar
   const fallbackAvatar = resolveDiscordAvatar(cleanId);
+  const fallbackProfile = {
+    username: `user_${cleanId.slice(-4)}`,
+    displayName: `User ${cleanId.slice(-4)}`,
+    avatar: fallbackAvatar,
+  };
+  await db.cacheDiscordProfile(cleanId, fallbackProfile);
   res.json({
     found: true,
-    source: 'discord_cdn',
-    username: `user_${cleanId.slice(-4)}`,
-    displayName: `Player ${cleanId.slice(-4)}`,
-    avatar: fallbackAvatar,
+    source: 'discord_cdn_deterministic',
+    ...fallbackProfile,
   });
 });
 
@@ -1011,5 +1075,112 @@ apiRouter.delete('/admin/profiles/:discordId', requireAdmin, async (req: Request
   }
   res.json({ success: true, message: 'تم حذف الملف الشخصي بنجاح.' });
 });
+
+// 8. Tier Testers Management (Add, update, delete, reorder)
+apiRouter.post('/admin/testers', requireAdmin, async (req: Request, res: Response) => {
+  const { discordId, minecraftName, discordUsername, discordDisplayName, discordAvatar, specialty, order, notes } = req.body;
+  
+  if (!minecraftName || typeof minecraftName !== 'string' || !minecraftName.trim()) {
+    res.status(400).json({ error: 'اسم اللاعب في ماين كرافت (Minecraft IGN) مطلوب.' });
+    return;
+  }
+
+  const validation = validateDiscordId(discordId);
+  if (!validation.valid) {
+    res.status(400).json({ error: validation.error });
+    return;
+  }
+
+  const newTester = await db.addTester({
+    discordId: String(discordId).trim(),
+    minecraftName: String(minecraftName).trim(),
+    discordUsername: discordUsername ? String(discordUsername).trim() : undefined,
+    discordDisplayName: discordDisplayName ? String(discordDisplayName).trim() : undefined,
+    discordAvatar: discordAvatar ? String(discordAvatar).trim() : undefined,
+    specialty: specialty ? String(specialty).trim() : undefined,
+    order: typeof order === 'number' ? order : undefined,
+    notes: notes ? String(notes).trim() : undefined,
+  });
+
+  res.status(201).json({
+    success: true,
+    tester: newTester,
+    testers: db.getTesters(),
+    message: 'تم إضافة المختبر الرسمي بنجاح.',
+  });
+});
+
+apiRouter.put('/admin/testers/:id', requireAdmin, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  const updated = await db.updateTester(id, updates);
+  if (!updated) {
+    res.status(404).json({ error: 'المختبر غير موجود.' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    tester: updated,
+    testers: db.getTesters(),
+    message: 'تم تحديث بيانات المختبر بنجاح.',
+  });
+});
+
+apiRouter.delete('/admin/testers/:id', requireAdmin, async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const deleted = await db.deleteTester(id);
+  if (!deleted) {
+    res.status(404).json({ error: 'المختبر غير موجود.' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    testers: db.getTesters(),
+    message: 'تم حذف المختبر بنجاح.',
+  });
+});
+
+apiRouter.post('/admin/testers/reorder', requireAdmin, async (req: Request, res: Response) => {
+  const { orderedIds } = req.body;
+  if (!Array.isArray(orderedIds)) {
+    res.status(400).json({ error: 'قائمة ترتيب المختبرين مطلوبة.' });
+    return;
+  }
+
+  const testers = await db.reorderTesters(orderedIds);
+  res.json({
+    success: true,
+    testers,
+    message: 'تم حفظ ترتيب المختبرين بنجاح.',
+  });
+});
+
+// 9. Login Logs and User Management Endpoints
+apiRouter.get('/admin/login-logs', requireAdmin, (_req: Request, res: Response) => {
+  const logs = db.getLoginLogs();
+  const users = db.getAllUsers();
+  res.json({ logs, users });
+});
+
+apiRouter.patch('/admin/users/:discordId/minecraft-name', requireAdmin, async (req: Request, res: Response) => {
+  const { discordId } = req.params;
+  const { minecraftName } = req.body;
+
+  const updated = await db.updateUserMinecraftName(discordId, String(minecraftName || ''));
+  if (!updated) {
+    res.status(404).json({ error: 'المستخدم غير موجود في قاعدة البيانات.' });
+    return;
+  }
+
+  res.json({
+    success: true,
+    user: updated,
+    message: 'تم تحديث اسم حساب ماين كرافت بنجاح.',
+  });
+});
+
 
 

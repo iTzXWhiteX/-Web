@@ -98,6 +98,8 @@ export interface UserProfile {
   bio?: string;
   createdAt: string;
   lastLogin?: string;
+  loginCount?: number;
+  minecraftName?: string;
   isAdmin: boolean;
   assignedRoles?: string[]; // IDs of assigned roles
   tier?: string;            // assigned tier/rating (e.g. HT1, LT1) or undefined
@@ -120,3 +122,37 @@ export interface PublicLeaderboardItem {
   gamesPlayed?: GameDiscipline[];
   notes?: string;
 }
+
+// Dedicated Tier Tester interface for conducting Tier Tests
+export interface TierTester {
+  id: string;
+  discordId: string;
+  minecraftName: string;
+  discordDisplayName?: string;
+  discordUsername?: string;
+  discordAvatar?: string;
+  specialty?: string;
+  notes?: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Persistent Login Log Entry for Admin Dashboard
+export interface LoginLogEntry {
+  id: string;
+  discordId: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+  loginAt: string;
+  loginCount: number;
+  ipAddress?: string;
+  userAgent?: string;
+  lastLogin?: string;
+  minecraftName?: string;
+  assignedRoles?: string[];
+  tier?: string;
+}
+
+

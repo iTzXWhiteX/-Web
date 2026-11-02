@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Shield,
   Save,
@@ -27,6 +27,14 @@ import {
   Award,
   RefreshCw,
   User,
+  Users,
+  History,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Gamepad2,
+  Copy,
+  UserCheck,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -38,6 +46,8 @@ import {
   GameDiscipline,
   NewsArticle,
   ServerRole,
+  TierTester,
+  LoginLogEntry,
 } from '../types/pvp.js';
 import { DiscordFormattedText } from '../utils/discordMentionParser.js';
 import { ImageUploadInput } from '../components/ImageUploadInput.js';
@@ -46,6 +56,7 @@ import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
 interface AdminDashboardPageProps {
   user: UserProfile;
   tiers?: TierDefinition[];
+  testers?: TierTester[];
   onRefreshPublicData: () => void;
   onNavigate: (page: string) => void;
 }
@@ -55,10 +66,11 @@ const EMOJI_PRESETS = ['👑', '🛡️', '⚔️', '⭐', '🔥', '💎', '🎮
 export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   user,
   tiers,
+  testers,
   onRefreshPublicData,
   onNavigate,
 }) => {
-  const [activeTab, setActiveTab] = useState<'settings' | 'about' | 'tierTest' | 'tiers' | 'news' | 'roles' | 'servers' | 'leaderboard' | 'profiles'>('profiles');
+  const [activeTab, setActiveTab] = useState<'loginLogs' | 'testers' | 'profiles' | 'settings' | 'about' | 'tierTest' | 'tiers' | 'news' | 'roles' | 'servers' | 'leaderboard'>('loginLogs');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -169,6 +181,26 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [profileSearchFilter, setProfileSearchFilter] = useState('');
   const [lookingUpProfileDiscord, setLookingUpProfileDiscord] = useState(false);
 
+  // --- Testers Management State ---
+  const [testersList, setTestersList] = useState<TierTester[]>(testers || []);
+  const [editingTester, setEditingTester] = useState<TierTester | null>(null);
+  const [testerDiscordId, setTesterDiscordId] = useState('');
+  const [testerMinecraftName, setTesterMinecraftName] = useState('');
+  const [testerDiscordName, setTesterDiscordName] = useState('');
+  const [testerDiscordUsername, setTesterDiscordUsername] = useState('');
+  const [testerDiscordAvatar, setTesterDiscordAvatar] = useState('');
+  const [testerSpecialty, setTesterSpecialty] = useState('');
+  const [testerNotes, setTesterNotes] = useState('');
+  const [lookingUpTesterDiscord, setLookingUpTesterDiscord] = useState(false);
+
+  // --- Login Logs & User Tracking State ---
+  const [loginLogsList, setLoginLogsList] = useState<LoginLogEntry[]>([]);
+  const [loginLogSearchFilter, setLoginLogSearchFilter] = useState('');
+  const [loginLogSortBy, setLoginLogSortBy] = useState<'date' | 'count'>('date');
+  const [editingMinecraftNameUser, setEditingMinecraftNameUser] = useState<{ discordId: string; currentName: string } | null>(null);
+  const [newMinecraftNameInput, setNewMinecraftNameInput] = useState('');
+  const [copiedDiscordId, setCopiedDiscordId] = useState<string | null>(null);
+
   // Helper to attach authorization header if present in localStorage (avoids iframe third-party cookie restrictions)
   const getAuthHeaders = useCallback((extraHeaders?: Record<string, string>) => {
     const token = localStorage.getItem('wk_token');
@@ -182,7 +214,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   // In-App Delete Confirmation Modal state (bypasses window.confirm which is blocked by iframe sandboxes)
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
-    type: 'role' | 'player' | 'server' | 'news' | 'tier' | 'profile';
+    type: 'role' | 'player' | 'server' | 'news' | 'tier' | 'profile' | 'tester';
     id: string;
     title: string;
     message: string;
@@ -199,11 +231,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         const data = await res.json();
         if (data.settings) setSettings(data.settings);
         if (data.testServers) setServers(data.testServers);
+        if (data.testers) setTestersList(data.testers);
         if (data.leaderboard) setLeaderboard(data.leaderboard);
         if (data.newsArticles) setNewsArticles(data.newsArticles);
         if (data.roles) setRoles(data.roles);
         if (data.tiers) setTiersList(data.tiers);
         if (data.users) setProfilesList(Array.isArray(data.users) ? data.users : Object.values(data.users));
+        if (data.loginLogs) setLoginLogsList(data.loginLogs);
       } else {
         setStatusMessage({ text: 'فشل تحميل بيانات لوحة الإدارة.', type: 'error' });
       }
@@ -850,6 +884,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       else if (type === 'player') endpoint = `/api/admin/leaderboard/${id}`;
       else if (type === 'tier') endpoint = `/api/admin/tiers/${encodeURIComponent(id)}`;
       else if (type === 'profile') endpoint = `/api/admin/profiles/${encodeURIComponent(id)}`;
+      else if (type === 'tester') endpoint = `/api/admin/testers/${encodeURIComponent(id)}`;
 
       const res = await fetch(endpoint, {
         method: 'DELETE',
@@ -994,6 +1029,201 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     });
   };
 
+  // --- Testers Management Handlers ---
+  const handleLookupTesterDiscord = async (id: string) => {
+    const cleanId = id.trim();
+    if (!cleanId) {
+      showNotification('يرجى إدخال معرّف ديسكورد (Discord ID) للمختبر أولاً.', 'error');
+      return;
+    }
+    try {
+      setLookingUpTesterDiscord(true);
+      const res = await fetch(`/api/admin/discord-lookup/${cleanId}`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.displayName || d.username) setTesterDiscordName(d.displayName || d.username);
+        if (d.username) setTesterDiscordUsername(d.username);
+        if (d.avatar) setTesterDiscordAvatar(d.avatar);
+        showNotification(`تم جلب بيانات المختبر: ${d.displayName || d.username}`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showNotification(err.error || 'فشل التحقق من حساب ديسكورد.', 'error');
+      }
+    } catch (err) {
+      showNotification('خطأ في الاتصال أثناء التحقق من حساب ديسكورد.', 'error');
+    } finally {
+      setLookingUpTesterDiscord(false);
+    }
+  };
+
+  const handleAddOrUpdateTester = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testerMinecraftName.trim()) {
+      showNotification('اسم اللاعب في ماين كرافت (Minecraft IGN) مطلوب.', 'error');
+      return;
+    }
+    if (!testerDiscordId.trim()) {
+      showNotification('معرّف ديسكورد (Discord ID) مطلوب.', 'error');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const isEditing = !!editingTester;
+      const url = isEditing ? `/api/admin/testers/${editingTester.id}` : '/api/admin/testers';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          discordId: testerDiscordId.trim(),
+          minecraftName: testerMinecraftName.trim(),
+          discordDisplayName: testerDiscordName.trim() || undefined,
+          discordUsername: testerDiscordUsername.trim() || undefined,
+          discordAvatar: testerDiscordAvatar.trim() || undefined,
+          specialty: testerSpecialty.trim() || undefined,
+          notes: testerNotes.trim() || undefined,
+          order: isEditing ? editingTester.order : (testersList.length + 1),
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.testers) setTestersList(data.testers);
+        showNotification(isEditing ? 'تم تحديث بيانات المختبر بنجاح!' : 'تمت إضافة المختبر الرسمي بنجاح!');
+        setEditingTester(null);
+        setTesterDiscordId('');
+        setTesterMinecraftName('');
+        setTesterDiscordName('');
+        setTesterDiscordUsername('');
+        setTesterDiscordAvatar('');
+        setTesterSpecialty('');
+        setTesterNotes('');
+        await fetchAdminData();
+        onRefreshPublicData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showNotification(err.error || 'فشل حفظ بيانات المختبر.', 'error');
+      }
+    } catch (err) {
+      showNotification('حدث خطأ أثناء حفظ بيانات المختبر.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditTester = (t: TierTester) => {
+    setEditingTester(t);
+    setTesterDiscordId(t.discordId);
+    setTesterMinecraftName(t.minecraftName);
+    setTesterDiscordName(t.discordDisplayName || '');
+    setTesterDiscordUsername(t.discordUsername || '');
+    setTesterDiscordAvatar(t.discordAvatar || '');
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  const handleCancelEditTester = () => {
+    setEditingTester(null);
+    setTesterDiscordId('');
+    setTesterMinecraftName('');
+    setTesterDiscordName('');
+    setTesterDiscordUsername('');
+    setTesterDiscordAvatar('');
+    setTesterSpecialty('');
+    setTesterNotes('');
+  };
+
+  const handleDeleteTester = (t: TierTester) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type: 'tester',
+      id: t.id,
+      title: `المختبر ${t.discordDisplayName || t.minecraftName}`,
+      message: `هل أنت متأكد من حذف المختبر ${t.discordDisplayName || t.minecraftName} (ماين كرافت: ${t.minecraftName}) نهائياً من قائمة مختبري المستويات؟`,
+    });
+  };
+
+  const handleMoveTester = async (index: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === testersList.length - 1)) {
+      return;
+    }
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const reordered = [...testersList];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIdx, 0, moved);
+
+    setTestersList(reordered);
+    try {
+      const res = await fetch('/api/admin/testers/reorder', {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ orderedIds: reordered.map(t => t.id) }),
+      });
+      if (res.ok) {
+        showNotification('تم تحديث ترتيب المختبرين بنجاح!');
+        onRefreshPublicData();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // --- Login Logs & User Minecraft Name Handlers ---
+  const handleSaveUserMinecraftName = async (discordId: string, name: string) => {
+    try {
+      setSaving(true);
+      const res = await fetch(`/api/admin/users/${discordId}/minecraft-name`, {
+        method: 'PATCH',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ minecraftName: name.trim() }),
+      });
+      if (res.ok) {
+        showNotification('تم تحديث اسم ماين كرافت للمستخدم بنجاح!');
+        setEditingMinecraftNameUser(null);
+        setNewMinecraftNameInput('');
+        await fetchAdminData();
+        onRefreshPublicData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showNotification(err.error || 'فشل تحديث اسم ماين كرافت.', 'error');
+      }
+    } catch (err) {
+      showNotification('حدث خطأ أثناء تحديث اسم ماين كرافت.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopyDiscordId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedDiscordId(id);
+    setTimeout(() => setCopiedDiscordId(null), 2500);
+  };
+
+  // Filtered and sorted login logs
+  const filteredLoginLogs = useMemo(() => {
+    let list = [...loginLogsList];
+    if (loginLogSearchFilter.trim()) {
+      const q = loginLogSearchFilter.trim().toLowerCase();
+      list = list.filter(
+        log =>
+          log.discordId.toLowerCase().includes(q) ||
+          log.username.toLowerCase().includes(q) ||
+          log.displayName?.toLowerCase().includes(q) ||
+          (log.minecraftName && log.minecraftName.toLowerCase().includes(q))
+      );
+    }
+    if (loginLogSortBy === 'count') {
+      list.sort((a, b) => (b.loginCount || 1) - (a.loginCount || 1));
+    } else {
+      list.sort((a, b) => new Date(b.loginAt).getTime() - new Date(a.loginAt).getTime());
+    }
+    return list;
+  }, [loginLogsList, loginLogSearchFilter, loginLogSortBy]);
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center text-slate-400" dir="rtl">
@@ -1045,6 +1275,42 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
       {/* Arabic Tabs */}
       <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-800 pb-3">
+        <button
+          onClick={() => setActiveTab('loginLogs')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+            activeTab === 'loginLogs'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
+          }`}
+        >
+          <History className="w-4 h-4" />
+          <span>سجل تسجيل الدخول وإدارة المستخدمين ({loginLogsList.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('testers')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+            activeTab === 'testers'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>إدارة مختبري المستويات ({testersList.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profiles')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+            activeTab === 'profiles'
+              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
+          }`}
+        >
+          <Shield className="w-4 h-4" />
+          <span>حسابات ديسكورد والرولات والتقييمات ({profilesList.length})</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('settings')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
@@ -1140,19 +1406,530 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <Trophy className="w-4 h-4" />
           <span>إدارة وتعديل اللاعبين ({leaderboard.length})</span>
         </button>
-
-        <button
-          onClick={() => setActiveTab('profiles')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
-            activeTab === 'profiles'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
-              : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
-          }`}
-        >
-          <Shield className="w-4 h-4" />
-          <span>حسابات ديسكورد والرولات والتقييمات ({profilesList.length})</span>
-        </button>
       </div>
+
+      {/* --- TAB: Login Logs & User Tracking Management --- */}
+      {activeTab === 'loginLogs' && (
+        <div className="space-y-6 text-right" dir="rtl">
+          {/* Header Card */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/25 relative overflow-hidden space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                  <History className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="font-heading font-extrabold text-xl sm:text-2xl text-white">
+                    سجل تسجيل الدخول وإدارة المستخدمين
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    متابعة فورية لجميع المستخدمين الذين سجلوا دخولهم عبر Discord OAuth مع تاريخ وتكرار تسجيل الدخول وإمكانية تعيين اسم ماين كرافت وإدارة الرتب
+                  </p>
+                </div>
+              </div>
+
+              {/* Stats badges */}
+              <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+                <div className="px-3 py-1.5 rounded-xl bg-cyan-950/50 border border-cyan-500/30 text-xs font-mono text-cyan-300">
+                  <span>إجمالي عمليات الدخول: </span>
+                  <span className="font-bold text-white">{loginLogsList.length}</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-slate-300">
+                  <span>المستخدمين الفريدين: </span>
+                  <span className="font-bold text-cyan-300">{profilesList.length}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter and Sort bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={loginLogSearchFilter}
+                  onChange={e => setLoginLogSearchFilter(e.target.value)}
+                  placeholder="ابحث باسم المستخدم، معرّف Discord ID، أو حساب ماين كرافت..."
+                  className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-white text-xs sm:text-sm focus:border-cyan-400 focus:outline-none transition-colors"
+                />
+                {loginLogSearchFilter && (
+                  <button
+                    onClick={() => setLoginLogSearchFilter('')}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                  >
+                    مسح
+                  </button>
+                )}
+              </div>
+
+              {/* Sorting */}
+              <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
+                <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
+                  <ArrowUpDown className="w-3.5 h-3.5" />
+                  <span>الترتيب:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLoginLogSortBy('date')}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    loginLogSortBy === 'date'
+                      ? 'bg-cyan-500 text-black shadow-sm'
+                      : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  حسب الأحدث
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginLogSortBy('count')}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    loginLogSortBy === 'count'
+                      ? 'bg-cyan-500 text-black shadow-sm'
+                      : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                >
+                  الأكثر دخولاً
+                </button>
+              </div>
+            </div>
+
+            {/* List of Login Logs */}
+            <div className="space-y-3 pt-2">
+              {filteredLoginLogs.map((log, idx) => {
+                const userProfile = profilesList.find(p => p.discordId === log.discordId);
+                const assignedRoles = userProfile?.assignedRoles || [];
+                const resolvedRoles = resolveUserRoles(assignedRoles, roles);
+                const tierDef = getTierDefinition(userProfile?.tier, tiersList);
+                const isEditingMC = editingMinecraftNameUser?.discordId === log.discordId;
+                const formattedDate = new Date(log.loginAt).toLocaleString('ar-SA', {
+                  year: 'numeric',
+                  month: 'numeric',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+
+                return (
+                  <div
+                    key={log.id || `${log.discordId}_${idx}`}
+                    className="p-4 sm:p-5 rounded-2xl glass-card border border-slate-800/80 hover:border-cyan-500/40 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                  >
+                    {/* Left/Main Column: Avatar & Names & ID */}
+                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                      <img
+                        src={log.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                        alt={log.displayName || log.username}
+                        className="w-12 h-12 rounded-2xl object-cover border-2 border-cyan-500/30 flex-shrink-0 shadow-md"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/logo.png';
+                        }}
+                      />
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-heading font-bold text-white text-sm sm:text-base truncate">
+                            {log.displayName || log.username}
+                          </span>
+                          {log.username && log.username !== log.displayName && (
+                            <span className="text-xs font-mono text-cyan-400" dir="ltr">
+                              @{log.username}
+                            </span>
+                          )}
+                          {userProfile?.isAdmin && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold">
+                              أدمن
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Discord ID with copy button */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <span className="text-[11px] font-mono">Discord ID:</span>
+                          <code className="font-mono text-[11px] text-slate-300 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800" dir="ltr">
+                            {log.discordId}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyDiscordId(log.discordId)}
+                            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition-colors"
+                            title="نسخ معرّف Discord ID"
+                          >
+                            {copiedDiscordId === log.discordId ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Middle Column: Minecraft IGN & Login Stats */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4 flex-shrink-0 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-slate-800/80">
+                      {/* Minecraft Name */}
+                      <div className="min-w-[170px]">
+                        {isEditingMC ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              value={newMinecraftNameInput}
+                              onChange={e => setNewMinecraftNameInput(e.target.value)}
+                              placeholder="اسم حساب ماين كرافت..."
+                              className="px-2.5 py-1 text-xs rounded-lg bg-slate-900 border border-cyan-400 text-white font-mono focus:outline-none"
+                              dir="ltr"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveUserMinecraftName(log.discordId, newMinecraftNameInput)}
+                              disabled={saving}
+                              className="px-2 py-1 rounded-lg bg-cyan-500 text-black font-bold text-xs hover:bg-cyan-400 transition-colors cursor-pointer"
+                            >
+                              حفظ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingMinecraftNameUser(null)}
+                              className="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 text-xs hover:bg-slate-700 transition-colors cursor-pointer"
+                            >
+                              إلغاء
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            {userProfile?.minecraftName || log.minecraftName ? (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-950/40 border border-cyan-500/30">
+                                <Gamepad2 className="w-3.5 h-3.5 text-cyan-400" />
+                                <span className="font-mono text-xs font-bold text-cyan-300" dir="ltr">
+                                  {userProfile?.minecraftName || log.minecraftName}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingMinecraftNameUser({
+                                      discordId: log.discordId,
+                                      currentName: userProfile?.minecraftName || log.minecraftName || '',
+                                    });
+                                    setNewMinecraftNameInput(userProfile?.minecraftName || log.minecraftName || '');
+                                  }}
+                                  className="p-1 rounded text-slate-400 hover:text-cyan-300"
+                                  title="تعديل اسم حساب ماين كرافت"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingMinecraftNameUser({ discordId: log.discordId, currentName: '' });
+                                  setNewMinecraftNameInput('');
+                                }}
+                                className="px-2.5 py-1 rounded-xl border border-dashed border-slate-700 hover:border-cyan-400 text-slate-400 hover:text-cyan-300 text-xs transition-colors flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>ربط حساب ماين كرافت</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Login Stats Pill */}
+                      <div className="text-right sm:text-center space-y-0.5">
+                        <div className="text-xs font-mono font-bold text-slate-200">
+                          {log.loginCount || 1} تسجيل دخول
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono">
+                          {formattedDate}
+                        </div>
+                      </div>
+
+                      {/* Tier Badge */}
+                      <div className="flex-shrink-0">
+                        {tierDef ? (
+                          <span
+                            className="px-2.5 py-1 rounded-xl text-xs font-mono font-bold shadow-sm"
+                            style={{
+                              backgroundColor: `${tierDef.color || '#00e5ff'}20`,
+                              color: tierDef.color || '#00e5ff',
+                              border: `1px solid ${tierDef.color || '#00e5ff'}40`,
+                            }}
+                          >
+                            {tierDef.name}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500">
+                            بدون تصنيف
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Manage Roles & Tier button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetUser = userProfile || {
+                            id: `user_${log.discordId}`,
+                            discordId: log.discordId,
+                            username: log.username,
+                            globalName: log.displayName,
+                            avatar: log.avatar,
+                            isAdmin: false,
+                            createdAt: log.loginAt,
+                          };
+                          handleEditProfile(targetUser);
+                          setActiveTab('profiles');
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-black text-cyan-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        <span>الرتب والتقييم</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {filteredLoginLogs.length === 0 && (
+                <div className="p-12 text-center text-slate-400 text-xs sm:text-sm rounded-2xl bg-slate-900/40 border border-dashed border-slate-800">
+                  {loginLogSearchFilter
+                    ? 'لم يتم العثور على أي نتائج تطابق البحث.'
+                    : 'لم يقم أي مستخدم بتسجيل الدخول بعد عبر ديسكورد.'}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB: Tier Testers Management --- */}
+      {activeTab === 'testers' && (
+        <div className="space-y-8 text-right" dir="rtl">
+          {/* Header Card */}
+          <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/25 relative overflow-hidden space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                  <UserCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="font-heading font-extrabold text-xl sm:text-2xl text-white">
+                    إدارة مختبري المستويات المعتمدين (Tier Testers)
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    إضافة وتعديل وحذف وإعادة ترتيب المختبرين المعتمدين المعروضين في صفحة اختبار المستويات العامة
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-mono text-cyan-300 self-start sm:self-auto">
+                <span>إجمالي المختبرين: </span>
+                <span className="font-bold text-white text-sm">{testersList.length}</span>
+              </div>
+            </div>
+
+            {/* Tester Form */}
+            <form onSubmit={handleAddOrUpdateTester} className="space-y-4 pt-2">
+              <h3 className="font-heading font-bold text-sm text-white flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-cyan-400" />
+                <span>{editingTester ? `تعديل المختبر (${editingTester.discordDisplayName || editingTester.minecraftName})` : 'إضافة مختبر معتمد جديد'}</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Discord ID with Lookup */}
+                <div>
+                  <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1.5">
+                    1. معرّف حساب ديسكورد (Discord User ID) *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={testerDiscordId}
+                      onChange={e => setTesterDiscordId(e.target.value)}
+                      placeholder="مثال: 819203810293819201"
+                      className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                      dir="ltr"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleLookupTesterDiscord(testerDiscordId)}
+                      disabled={lookingUpTesterDiscord || !testerDiscordId.trim()}
+                      className="px-3.5 py-2.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      <span>{lookingUpTesterDiscord ? 'جاري الفحص...' : 'فحص وجلب'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Minecraft IGN */}
+                <div>
+                  <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1.5">
+                    2. اسم حساب ماين كرافت (Minecraft IGN) *
+                  </label>
+                  <input
+                    type="text"
+                    value={testerMinecraftName}
+                    onChange={e => setTesterMinecraftName(e.target.value)}
+                    placeholder="مثال: FrostByte_ أو WhiteKnightMC"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:border-cyan-400 focus:outline-none"
+                    dir="ltr"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Fetched Discord Profile Preview if present */}
+              {(testerDiscordName || testerDiscordAvatar) && (
+                <div className="p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex items-center gap-3">
+                  <img
+                    src={testerDiscordAvatar || '/logo.png'}
+                    alt="Preview"
+                    className="w-10 h-10 rounded-xl object-cover border border-cyan-400"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                  />
+                  <div className="text-xs space-y-0.5">
+                    <div className="font-bold text-white">{testerDiscordName}</div>
+                    {testerDiscordUsername && (
+                      <div className="font-mono text-cyan-400 text-[11px]" dir="ltr">@{testerDiscordUsername}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Optional Specialty / Specialty Tag */}
+              <div>
+                <label className="block text-xs font-mono font-semibold text-slate-300 uppercase mb-1.5">
+                  3. التخصص / المودات المعتمدة للاختبار (اختياري)
+                </label>
+                <input
+                  type="text"
+                  value={testerSpecialty}
+                  onChange={e => setTesterSpecialty(e.target.value)}
+                  placeholder="مثال: Netherite Pot & Crystal PvP أو Axe & Shield"
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:border-cyan-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 hover:from-blue-500 hover:to-cyan-300 text-white shadow-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{editingTester ? 'حفظ التعديلات' : 'إضافة المختبر الرسمي'}</span>
+                </button>
+                {editingTester && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEditTester}
+                    className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                  >
+                    إلغاء التعديل
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* List of Testers with Reordering */}
+            <div className="pt-6 border-t border-slate-800/80 space-y-3">
+              <h3 className="font-heading font-bold text-sm text-slate-200">
+                قائمة المختبرين المعتمدين الحالية ({testersList.length})
+              </h3>
+
+              <div className="space-y-2.5">
+                {testersList.map((tester, idx) => (
+                  <div
+                    key={tester.id}
+                    className="p-4 rounded-2xl glass-card border border-slate-800/80 hover:border-cyan-500/30 transition-all flex items-center justify-between gap-3"
+                  >
+                    {/* Position and details */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Up/Down buttons */}
+                      <div className="flex flex-col gap-1 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveTester(idx, 'up')}
+                          disabled={idx === 0}
+                          className="p-1 rounded bg-slate-800 hover:bg-cyan-500 hover:text-black text-slate-400 disabled:opacity-30 transition-colors"
+                          title="تحريك لأعلى"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveTester(idx, 'down')}
+                          disabled={idx === testersList.length - 1}
+                          className="p-1 rounded bg-slate-800 hover:bg-cyan-500 hover:text-black text-slate-400 disabled:opacity-30 transition-colors"
+                          title="تحريك لأسفل"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <span className="font-mono font-bold text-xs text-cyan-400 w-6 text-center">
+                        #{idx + 1}
+                      </span>
+
+                      <img
+                        src={tester.discordAvatar || '/logo.png'}
+                        alt={tester.discordDisplayName || tester.minecraftName}
+                        className="w-11 h-11 rounded-xl object-cover border border-cyan-500/30 flex-shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
+                      />
+
+                      <div className="min-w-0 space-y-0.5 text-right">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-heading font-bold text-white text-sm">
+                            {tester.discordDisplayName || tester.minecraftName}
+                          </span>
+                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg bg-cyan-950/60 border border-cyan-500/30 text-cyan-300" dir="ltr">
+                            {tester.minecraftName}
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-mono text-slate-400 flex items-center gap-2" dir="ltr">
+                          {tester.discordUsername && <span>@{tester.discordUsername}</span>}
+                          <span className="text-slate-500">({tester.discordId})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleEditTester(tester)}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
+                        title="تعديل"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTester(tester)}
+                        className="p-2 rounded-xl bg-red-950/50 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 transition-colors cursor-pointer"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {testersList.length === 0 && (
+                  <div className="p-8 rounded-2xl bg-slate-900/40 border border-dashed border-slate-800 text-center text-slate-400 text-xs">
+                    لم تتم إضافة أي مختبرين معتمدين بعد.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab 1: Settings (Server Name, Logo, YouTube, Badge) */}
       {activeTab === 'settings' && (

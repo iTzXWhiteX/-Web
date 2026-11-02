@@ -26,6 +26,7 @@ import {
   ServerRole,
   TierDefinition,
   WHITE_KINGDOM_TIERS,
+  TierTester,
 } from './types/pvp.js';
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
     welcomeBadgeText: 'المجتمع التنافسي الرسمي 2026',
   });
   const [testServers, setTestServers] = useState<TestServer[]>([]);
+  const [testers, setTesters] = useState<TierTester[]>([]);
   const [leaderboard, setLeaderboard] = useState<PublicLeaderboardItem[]>([]);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [roles, setRoles] = useState<ServerRole[]>([]);
@@ -59,6 +61,7 @@ export default function App() {
         const data = await res.json();
         if (data.settings) setSettings(data.settings);
         if (data.testServers) setTestServers(data.testServers);
+        if (data.testers) setTesters(data.testers);
         if (data.leaderboard) setLeaderboard(data.leaderboard);
         if (data.newsArticles) setNewsArticles(data.newsArticles);
         if (data.roles) setRoles(data.roles);
@@ -181,6 +184,7 @@ export default function App() {
             <AdminDashboardPage
               user={currentUser}
               tiers={tiers}
+              testers={testers}
               onRefreshPublicData={fetchPublicData}
               onNavigate={navigateTo}
             />
@@ -240,6 +244,7 @@ export default function App() {
                 <TierTestPage
                   content={settings.tierTestContent}
                   testServers={testServers}
+                  testers={testers}
                   tiers={tiers}
                   onNavigate={navigateTo}
                 />
