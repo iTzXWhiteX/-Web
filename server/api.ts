@@ -34,6 +34,9 @@ apiRouter.get('/config', (req: Request, res: Response) => {
   const redirectUri = getRedirectUri(req);
   const settings = db.getSettings();
 
+  const devRedirectUri = 'https://ais-dev-dp23obbeui2s6ee2zzaska-953765324818.europe-west2.run.app/auth/callback';
+  const sharedRedirectUri = 'https://ais-pre-dp23obbeui2s6ee2zzaska-953765324818.europe-west2.run.app/auth/callback';
+
   res.json({
     serverName: settings.serverName,
     logoUrl: settings.logoUrl,
@@ -41,6 +44,13 @@ apiRouter.get('/config', (req: Request, res: Response) => {
     isDiscordConfigured,
     discordClientId: process.env.DISCORD_CLIENT_ID ? 'Configured (Active)' : null,
     redirectUri,
+    devRedirectUri,
+    sharedRedirectUri,
+    allowedRedirectUris: [
+      devRedirectUri,
+      sharedRedirectUri,
+      redirectUri,
+    ].filter((v, i, a) => a.indexOf(v) === i),
   });
 });
 
@@ -209,8 +219,49 @@ export async function handleDiscordCallback(req: Request, res: Response): Promis
 
     if (!tokenResponse.ok) {
       const errBody = await tokenResponse.text();
-      console.error('Discord token exchange failed:', errBody);
-      throw new Error(`Failed to exchange code: ${tokenResponse.statusText}`);
+      console.error('Discord token exchange failed:', errBody, 'effectiveRedirectUri:', effectiveRedirectUri);
+      let parsedErr: any = {};
+      try {
+        parsedErr = JSON.parse(errBody);
+      } catch {
+        parsedErr = { error: errBody };
+      }
+
+      res.status(400).send(`
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+          <head>
+            <meta charset="utf-8" />
+            <title>تعذر إتمام توثيق ديسكورد</title>
+          </head>
+          <body style="font-family: system-ui, -apple-system, sans-serif; background: #060913; color: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px;">
+            <div style="background: rgba(10, 16, 31, 0.95); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 20px; padding: 32px; max-width: 520px; width: 100%; box-shadow: 0 0 50px rgba(239, 68, 68, 0.2); text-align: right;">
+              <h2 style="color: #ef4444; margin-top: 0; font-size: 22px; display: flex; align-items: center; gap: 8px;">
+                <span>فشل توثيق حساب ديسكورد</span>
+              </h2>
+              <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                رفضت خوادم ديسكورد استبدال رمز التوثيق. السبب المرجع من ديسكورد:
+              </p>
+              <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 16px; margin: 16px 0; font-family: monospace; font-size: 13px; color: #fca5a5; direction: ltr; text-align: left; word-break: break-all;">
+                ${parsedErr.error_description || parsedErr.error || errBody}
+              </div>
+              <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 13px; color: #cbd5e1;">
+                <div style="font-weight: bold; color: #00e5ff; margin-bottom: 6px;">الرابط المستخدم للتحويل (Redirect URI):</div>
+                <div style="font-family: monospace; font-size: 12px; color: #ffffff; direction: ltr; text-align: left; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; word-break: break-all;">
+                  ${effectiveRedirectUri}
+                </div>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">
+                  تأكد من إضافة هذا الرابط بالضبط داخل <strong style="color: #fff;">Discord Developer Portal -> OAuth2 -> Redirects</strong>
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="window.close()" style="background: #2563eb; color: white; border: none; padding: 10px 24px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer;">إغلاق النافذة</button>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+      return;
     }
 
     const tokenData = await tokenResponse.json() as { access_token: string; token_type: string };

@@ -82,7 +82,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             {/* Owner Discord Profile Badge */}
             {ownerName && (
               <div className="pt-2 flex justify-center">
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl glass-panel-subtle border border-cyan-500/20 shadow-md hover:border-cyan-400/40 transition-colors">
+                <div className="glow-card inline-flex items-center gap-3 px-4 py-2 rounded-2xl shadow-md transition-colors">
                   {ownerAvatar ? (
                     <img
                       src={ownerAvatar}
@@ -119,7 +119,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 href={discordInviteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="col-span-1 sm:col-span-2 py-3.5 px-6 rounded-2xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-heading font-bold text-sm sm:text-base flex items-center justify-between group shadow-[0_0_20px_rgba(88,101,242,0.35)] transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                className="glow-btn col-span-1 sm:col-span-2 py-3.5 px-6 rounded-2xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-heading font-bold text-sm sm:text-base flex items-center justify-between group shadow-[0_0_20px_rgba(88,101,242,0.35)] transition-all cursor-pointer whitespace-nowrap"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-white/10">

@@ -26,8 +26,11 @@ export async function startServer() {
   }
   app.use('/uploads', express.static(uploadsDir));
 
-  // Mount OAuth Callback routes directly on root as specified in OAuth Integration
-  app.get(['/auth/callback', '/auth/callback/'], handleDiscordCallback);
+  // Mount OAuth Callback routes directly on root and api prefixes
+  app.get(
+    ['/auth/callback', '/auth/callback/', '/api/auth/callback', '/api/auth/callback/'],
+    handleDiscordCallback
+  );
 
   // Mount REST API routes
   app.use('/api', apiRouter);
