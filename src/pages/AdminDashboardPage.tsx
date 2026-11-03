@@ -35,6 +35,7 @@ import {
   Gamepad2,
   Copy,
   UserCheck,
+  Cloud,
 } from 'lucide-react';
 import {
   UserProfile,
@@ -74,6 +75,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [cloudinaryStatus, setCloudinaryStatus] = useState<{
+    configured: boolean;
+    cloudName?: string;
+    hasApiKey: boolean;
+    hasApiSecret: boolean;
+    missingVariables: string[];
+  } | null>(null);
 
   // Settings state
   const [settings, setSettings] = useState<WebsiteSettings>({
@@ -238,6 +246,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
         if (data.tiers) setTiersList(data.tiers);
         if (data.users) setProfilesList(Array.isArray(data.users) ? data.users : Object.values(data.users));
         if (data.loginLogs) setLoginLogsList(data.loginLogs);
+
+        // Fetch Cloudinary permanent storage status safely
+        fetch('/api/admin/storage-status', { headers: getAuthHeaders() })
+          .then(r => (r.ok ? r.json() : null))
+          .then(st => {
+            if (st) setCloudinaryStatus(st);
+          })
+          .catch(() => null);
       } else {
         setStatusMessage({ text: 'فشل تحميل بيانات لوحة الإدارة.', type: 'error' });
       }
@@ -1937,6 +1953,54 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
           <div>
             <h2 className="font-heading font-bold text-xl text-white">الإعدادات العامة لموقع المجتمع</h2>
             <p className="text-xs text-slate-400">تعديل اسم السيرفر، اللوجو، رابط اليوتيوب، وشارة الترحيب العلوية.</p>
+          </div>
+
+          {/* Cloudinary Storage Integration Status Card */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <Cloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>التخزين السحابي الدائم للصور (Cloudinary)</span>
+                    {cloudinaryStatus?.configured ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>متصل وجاهز</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono font-bold">
+                        يتطلب ضبط المتغيرات
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    جميع الصور المرفوعة (اللوجو، صور الأخبار، وصور سيرفرات الاختبار) تُحفظ بشكل دائم على سحابة Cloudinary وتُربط بقاعدة بيانات Neon PostgreSQL.
+                  </p>
+                </div>
+              </div>
+
+              {cloudinaryStatus?.cloudName && (
+                <div className="px-3 py-1.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs font-mono text-cyan-300 flex-shrink-0" dir="ltr">
+                  Cloud: {cloudinaryStatus.cloudName}
+                </div>
+              )}
+            </div>
+
+            {!cloudinaryStatus?.configured && (
+              <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 space-y-1.5">
+                <p className="font-semibold">
+                  لتفعيل التخزين الدائم للصور، يرجى إضافة متغيرات البيئة التالية في لوحة الاستضافة (EthioDeploy):
+                </p>
+                <div className="flex flex-wrap gap-2 font-mono text-[11px] text-amber-300" dir="ltr">
+                  <span className="px-2 py-0.5 rounded bg-black/40 border border-amber-500/40">CLOUDINARY_CLOUD_NAME</span>
+                  <span className="px-2 py-0.5 rounded bg-black/40 border border-amber-500/40">CLOUDINARY_API_KEY</span>
+                  <span className="px-2 py-0.5 rounded bg-black/40 border border-amber-500/40">CLOUDINARY_API_SECRET</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">

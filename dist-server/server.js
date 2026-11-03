@@ -2,14 +2,11 @@
 import "dotenv/config";
 import express2 from "express";
 import cookieParser from "cookie-parser";
-import path3 from "path";
-import fs3 from "fs";
+import path2 from "path";
+import fs2 from "fs";
 
 // server/api.ts
 import express from "express";
-import fs2 from "fs";
-import path2 from "path";
-import crypto2 from "crypto";
 
 // server/db.ts
 import "dotenv/config";
@@ -1126,6 +1123,67 @@ var DatabaseManager = class {
 };
 var db = new DatabaseManager();
 
+// server/cloudinary.ts
+import cloudinaryPkg from "cloudinary";
+var cloudinary = cloudinaryPkg.v2;
+function getCloudinaryStatus() {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
+  const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
+  const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
+  const missing = [];
+  if (!cloudName) missing.push("CLOUDINARY_CLOUD_NAME");
+  if (!apiKey) missing.push("CLOUDINARY_API_KEY");
+  if (!apiSecret) missing.push("CLOUDINARY_API_SECRET");
+  return {
+    configured: missing.length === 0,
+    cloudName: cloudName || void 0,
+    hasApiKey: Boolean(apiKey),
+    hasApiSecret: Boolean(apiSecret),
+    missingVariables: missing
+  };
+}
+function getCloudinaryClient() {
+  const status = getCloudinaryStatus();
+  if (!status.configured) {
+    throw new Error(
+      `Cloudinary configuration missing on server: ${status.missingVariables.join(", ")}`
+    );
+  }
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME.trim(),
+    api_key: process.env.CLOUDINARY_API_KEY.trim(),
+    api_secret: process.env.CLOUDINARY_API_SECRET.trim(),
+    secure: true
+  });
+  return cloudinary;
+}
+async function uploadToCloudinary(dataUrlOrBuffer, options = {}) {
+  const client = getCloudinaryClient();
+  const folder = options.folder || "white_kingdom";
+  let uploadPayload;
+  if (Buffer.isBuffer(dataUrlOrBuffer)) {
+    uploadPayload = `data:image/png;base64,${dataUrlOrBuffer.toString("base64")}`;
+  } else {
+    uploadPayload = dataUrlOrBuffer;
+  }
+  const result = await client.uploader.upload(uploadPayload, {
+    folder,
+    public_id: options.publicId,
+    resource_type: "image",
+    use_filename: Boolean(options.filename),
+    unique_filename: true,
+    overwrite: false
+  });
+  return {
+    url: result.secure_url,
+    publicId: result.public_id,
+    format: result.format,
+    bytes: result.bytes,
+    width: result.width,
+    height: result.height
+  };
+}
+
 // server/auth.ts
 import crypto from "crypto";
 var SESSION_COOKIE_NAME = "wk_session_token";
@@ -2122,37 +2180,49 @@ apiRouter.post("/admin/upload", requireAdmin, async (req, res) => {
     }
     const match = dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/);
     if (!match) {
-      res.status(400).json({ error: "\u0635\u064A\u063A\u0629 \u0645\u0644\u0641 \u0627\u0644\u0635\u0648\u0631\u0629 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629. \u064A\u0631\u062C\u0649 \u0631\u0641\u0639 \u0635\u0648\u0631\u0629 \u0628\u0635\u064A\u063A\u0629 \u0635\u0627\u0644\u062D\u0629 (PNG, JPG, WebP, GIF)." });
+      res.status(400).json({ error: "\u0635\u064A\u063A\u0629 \u0645\u0644\u0641 \u0627\u0644\u0635\u0648\u0631\u0629 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629. \u064A\u0631\u062C\u0649 \u0631\u0641\u0639 \u0635\u0648\u0631\u0629 \u0628\u0635\u064A\u063A\u0629 \u0635\u0627\u0644\u062D\u0629 (PNG, JPG, WebP, GIF, SVG)." });
       return;
     }
-    let ext = match[1].toLowerCase();
-    if (ext === "jpeg") ext = "jpg";
-    if (ext === "svg+xml") ext = "svg";
-    const base64Data = match[2];
-    const buffer = Buffer.from(base64Data, "base64");
-    if (buffer.length > 15 * 1024 * 1024) {
-      res.status(400).json({ error: "\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B. \u0627\u0644\u062D\u062F \u0627\u0644\u0623\u0642\u0635\u0649 \u0647\u0648 15 \u0645\u064A\u063A\u0627\u0628\u0627\u064A\u062A." });
+    const status = getCloudinaryStatus();
+    if (!status.configured) {
+      const missingVars = status.missingVariables.join(", ");
+      console.warn(`[Cloudinary] Upload blocked: Missing server environment variables: ${missingVars}`);
+      res.status(503).json({
+        error: `\u062E\u062F\u0645\u0629 \u0627\u0644\u062A\u062E\u0632\u064A\u0646 \u0627\u0644\u0633\u062D\u0627\u0628\u064A Cloudinary \u063A\u064A\u0631 \u0645\u0647\u064A\u0623\u0629 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0631\u0641\u0631. \u064A\u0631\u062C\u0649 \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0645\u062A\u063A\u064A\u0631\u0627\u062A \u0627\u0644\u062A\u0627\u0644\u064A\u0629 \u0641\u064A \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0628\u064A\u0626\u0629 (EthioDeploy): ${missingVars}.`,
+        missingVariables: status.missingVariables
+      });
       return;
     }
-    const uploadsDir = path2.resolve(process.cwd(), "data", "uploads");
-    if (!fs2.existsSync(uploadsDir)) {
-      fs2.mkdirSync(uploadsDir, { recursive: true });
-    }
-    const safeRand = crypto2.randomBytes(6).toString("hex");
-    const savedName = `wk_${Date.now()}_${safeRand}.${ext}`;
-    const filePath = path2.join(uploadsDir, savedName);
-    fs2.writeFileSync(filePath, buffer);
-    const publicUrl = `/uploads/${savedName}`;
+    const result = await uploadToCloudinary(dataUrl, {
+      folder: "white_kingdom",
+      filename
+    });
     res.json({
       success: true,
-      url: publicUrl,
-      size: buffer.length,
-      filename: savedName
+      url: result.url,
+      // Permanent HTTPS secure_url
+      publicId: result.publicId,
+      size: result.bytes,
+      format: result.format,
+      storage: "cloudinary"
     });
   } catch (err) {
-    console.error("Image upload error:", err);
-    res.status(500).json({ error: "\u062D\u062F\u062B \u062E\u0637\u0623 \u0623\u062B\u0646\u0627\u0621 \u062D\u0641\u0638 \u0627\u0644\u0635\u0648\u0631\u0629 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0631\u0641\u0631." });
+    console.error("[Cloudinary] Upload error:", err);
+    res.status(502).json({
+      error: `\u0641\u0634\u0644 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631\u0629 \u0625\u0644\u0649 \u062E\u062F\u0645\u0629 Cloudinary: ${err?.message || "\u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u0639\u0631\u0648\u0641 \u0641\u064A \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0628\u0627\u0644\u062E\u062F\u0645\u0629"}. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646 \u0635\u062D\u0629 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0627\u0639\u062A\u0645\u0627\u062F (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET).`
+    });
   }
+});
+apiRouter.get("/admin/storage-status", requireAdmin, (_req, res) => {
+  const status = getCloudinaryStatus();
+  res.json({
+    provider: "cloudinary",
+    configured: status.configured,
+    cloudName: status.cloudName || null,
+    hasApiKey: status.hasApiKey,
+    hasApiSecret: status.hasApiSecret,
+    missingVariables: status.missingVariables
+  });
 });
 apiRouter.get("/admin/profiles", requireAdmin, (_req, res) => {
   const profiles = db.getAllProfiles();
@@ -2328,9 +2398,9 @@ async function startServer() {
   app.use(express2.json({ limit: "25mb" }));
   app.use(express2.urlencoded({ extended: true, limit: "25mb" }));
   app.use(cookieParser());
-  const uploadsDir = path3.resolve(process.cwd(), "data", "uploads");
-  if (!fs3.existsSync(uploadsDir)) {
-    fs3.mkdirSync(uploadsDir, { recursive: true });
+  const uploadsDir = path2.resolve(process.cwd(), "data", "uploads");
+  if (!fs2.existsSync(uploadsDir)) {
+    fs2.mkdirSync(uploadsDir, { recursive: true });
   }
   app.use("/uploads", express2.static(uploadsDir));
   app.get(
@@ -2338,12 +2408,12 @@ async function startServer() {
     handleDiscordCallback
   );
   app.use("/api", apiRouter);
-  const distPath = path3.resolve(process.cwd(), "dist");
-  const hasDist = fs3.existsSync(distPath);
+  const distPath = path2.resolve(process.cwd(), "dist");
+  const hasDist = fs2.existsSync(distPath);
   if (process.env.NODE_ENV === "production" || hasDist) {
     app.use(express2.static(distPath));
     app.get("*", (_req, res) => {
-      res.sendFile(path3.resolve(distPath, "index.html"));
+      res.sendFile(path2.resolve(distPath, "index.html"));
     });
   } else {
     const { createServer: createViteServer } = await import("vite");

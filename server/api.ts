@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { db } from './db.ts';
+import { uploadToCloudinary, getCloudinaryStatus } from './cloudinary.ts';
 import {
   getSessionUser,
   requireAuth,
@@ -986,7 +987,7 @@ apiRouter.post('/admin/tiers/reset', requireAdmin, async (req: Request, res: Res
   });
 });
 
-// 6. Direct Image Upload from Device (handles file uploads with base64 data URLs)
+// 6. Direct Permanent Image Upload via Cloudinary
 apiRouter.post('/admin/upload', requireAdmin, async (req: Request, res: Response) => {
   try {
     const { dataUrl, filename } = req.body;
@@ -997,44 +998,55 @@ apiRouter.post('/admin/upload', requireAdmin, async (req: Request, res: Response
 
     const match = dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/);
     if (!match) {
-      res.status(400).json({ error: 'صيغة ملف الصورة غير صحيحة. يرجى رفع صورة بصيغة صالحة (PNG, JPG, WebP, GIF).' });
+      res.status(400).json({ error: 'صيغة ملف الصورة غير صحيحة. يرجى رفع صورة بصيغة صالحة (PNG, JPG, WebP, GIF, SVG).' });
       return;
     }
 
-    let ext = match[1].toLowerCase();
-    if (ext === 'jpeg') ext = 'jpg';
-    if (ext === 'svg+xml') ext = 'svg';
-    const base64Data = match[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Limit image size to 15MB
-    if (buffer.length > 15 * 1024 * 1024) {
-      res.status(400).json({ error: 'حجم الصورة كبير جداً. الحد الأقصى هو 15 ميغابايت.' });
+    // Verify Cloudinary configuration on the server
+    const status = getCloudinaryStatus();
+    if (!status.configured) {
+      const missingVars = status.missingVariables.join(', ');
+      console.warn(`[Cloudinary] Upload blocked: Missing server environment variables: ${missingVars}`);
+      res.status(503).json({
+        error: `خدمة التخزين السحابي Cloudinary غير مهيأة على السيرفر. يرجى إضافة المتغيرات التالية في إعدادات البيئة (EthioDeploy): ${missingVars}.`,
+        missingVariables: status.missingVariables,
+      });
       return;
     }
 
-    const uploadsDir = path.resolve(process.cwd(), 'data', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    // Upload to Cloudinary external permanent storage
+    const result = await uploadToCloudinary(dataUrl, {
+      folder: 'white_kingdom',
+      filename,
+    });
 
-    const safeRand = crypto.randomBytes(6).toString('hex');
-    const savedName = `wk_${Date.now()}_${safeRand}.${ext}`;
-    const filePath = path.join(uploadsDir, savedName);
-
-    fs.writeFileSync(filePath, buffer);
-
-    const publicUrl = `/uploads/${savedName}`;
     res.json({
       success: true,
-      url: publicUrl,
-      size: buffer.length,
-      filename: savedName,
+      url: result.url, // Permanent HTTPS secure_url
+      publicId: result.publicId,
+      size: result.bytes,
+      format: result.format,
+      storage: 'cloudinary',
     });
   } catch (err: any) {
-    console.error('Image upload error:', err);
-    res.status(500).json({ error: 'حدث خطأ أثناء حفظ الصورة على السيرفر.' });
+    console.error('[Cloudinary] Upload error:', err);
+    res.status(502).json({
+      error: `فشل رفع الصورة إلى خدمة Cloudinary: ${err?.message || 'خطأ غير معروف في الاتصال بالخدمة'}. يرجى التحقق من صحة بيانات الاعتماد (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET).`,
+    });
   }
+});
+
+// Storage Status Endpoint (Safe check - NEVER exposes CLOUDINARY_API_SECRET to client)
+apiRouter.get('/admin/storage-status', requireAdmin, (_req: Request, res: Response) => {
+  const status = getCloudinaryStatus();
+  res.json({
+    provider: 'cloudinary',
+    configured: status.configured,
+    cloudName: status.cloudName || null,
+    hasApiKey: status.hasApiKey,
+    hasApiSecret: status.hasApiSecret,
+    missingVariables: status.missingVariables,
+  });
 });
 
 // 7. Administrator Discord Profiles, Roles & Ratings Management

@@ -123,13 +123,13 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
         }
       }
 
-      // If server upload had an issue or in local preview, fall back smoothly to the processed dataUrl
-      onChange(dataUrl);
-      setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 3000);
+      // Extract clear server error (e.g., missing Cloudinary credentials or upload failure)
+      const errData = await res.json().catch(() => null);
+      const serverMsg = errData?.error || 'فشل رفع الصورة إلى خدمة التخزين السحابي Cloudinary.';
+      setUploadError(serverMsg);
     } catch (err: any) {
       console.error('File upload error:', err);
-      setUploadError(err.message || 'فشل معالجة الصورة، يرجى المحاولة مرة أخرى.');
+      setUploadError(err.message || 'حدث خطأ أثناء الاتصال بالسيرفر لرفع الصورة.');
     } finally {
       setIsUploading(false);
     }
@@ -279,9 +279,18 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
                 <p className="text-[11px] text-slate-400">
                   اضغط هنا لاختيار صورة أخرى من جهازك أو سحب ملف جديد.
                 </p>
-                <p className="text-[10px] font-mono text-cyan-300/80 truncate max-w-xs" dir="ltr">
-                  {value.startsWith('data:') ? 'تم تخزين الصورة (Base64 محلي)' : value}
-                </p>
+                <div className="text-[10px] font-mono text-cyan-300/80 truncate max-w-xs mt-0.5" dir="ltr">
+                  {value.includes('cloudinary.com') ? (
+                    <span className="text-cyan-400 font-semibold flex items-center gap-1">
+                      <span>☁️ Cloudinary:</span>
+                      <span className="truncate">{value}</span>
+                    </span>
+                  ) : value.startsWith('data:') ? (
+                    <span className="text-amber-400">صورة محلية (Base64)</span>
+                  ) : (
+                    <span>{value}</span>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="space-y-1">
