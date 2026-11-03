@@ -263,6 +263,8 @@ export function clearSessionCookie(res: Response): void {
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
     path: '/',
+  });
 }
+
 
 

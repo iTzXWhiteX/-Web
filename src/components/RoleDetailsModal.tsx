@@ -17,9 +17,8 @@ export const RoleDetailsModal: React.FC<RoleDetailsModalProps> = ({ role, onClos
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg bg-[#0c1222] border rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-right"
+        className="relative w-full max-w-lg glow-window rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 text-right"
         style={{
-          borderColor: `${role.color}66`,
           boxShadow: `0 0 35px ${role.color}25, 0 10px 40px rgba(0,0,0,0.8)`,
         }}
         onClick={e => e.stopPropagation()}
@@ -123,7 +122,7 @@ export const RoleDetailsModal: React.FC<RoleDetailsModalProps> = ({ role, onClos
         <div className="mt-6 pt-4 border-t border-slate-800/80 flex justify-center">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-8 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all cursor-pointer border border-slate-700 hover:border-cyan-500/50"
+            className="glow-btn w-full sm:w-auto px-8 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all cursor-pointer border border-slate-700 hover:border-cyan-500/50"
           >
             إغلاق النافذة
           </button>

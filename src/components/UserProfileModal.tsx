@@ -55,7 +55,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl glass-panel rounded-3xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,229,255,0.25)] overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-xl glow-window rounded-3xl shadow-[0_0_50px_rgba(0,229,255,0.25)] overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Banner */}
@@ -65,7 +65,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 left-4 p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-cyan-400 transition-colors cursor-pointer"
+            className="glow-btn absolute top-4 left-4 p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-cyan-400 transition-colors cursor-pointer"
             aria-label="إغلاق"
           >
             <X className="w-5 h-5" />
@@ -232,7 +232,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     onClose();
                     onNavigateToAdmin();
                   }}
-                  className="flex-1 py-3 px-4 rounded-xl text-xs font-mono font-bold text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900/80 border border-cyan-500/40 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="glow-btn flex-1 py-3 px-4 rounded-xl text-xs font-mono font-bold text-cyan-300 bg-cyan-950/70 hover:bg-cyan-900/80 border border-cyan-500/40 flex items-center justify-center gap-2 transition-all cursor-pointer"
                 >
                   <Shield className="w-4 h-4 text-cyan-400" />
                   <span>فتح لوحة الإدارة</span>
@@ -244,7 +244,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   onClose();
                   onLogout();
                 }}
-                className="py-3 px-5 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-900/40 border border-red-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="glow-btn py-3 px-5 rounded-xl text-xs font-semibold text-red-400 hover:text-red-300 bg-red-950/30 hover:bg-red-900/40 border border-red-500/30 flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>تسجيل الخروج</span>

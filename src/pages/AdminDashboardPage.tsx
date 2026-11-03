@@ -1253,7 +1253,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => onNavigate('home')}
-          className="text-xs font-semibold px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer"
+          className="glow-btn text-xs font-semibold px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors cursor-pointer"
         >
           عرض الموقع العام
         </button>

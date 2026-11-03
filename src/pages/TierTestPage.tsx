@@ -233,7 +233,7 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
         <div className="pt-2 flex justify-center">
           <button
             onClick={() => onNavigate('leaderboard')}
-            className="w-full sm:w-auto min-w-[280px] py-4 px-8 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 hover:from-blue-500 hover:to-cyan-300 active:scale-[0.99] text-white font-heading font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(0,229,255,0.35)] hover:shadow-[0_0_40px_rgba(0,229,255,0.5)] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400"
+            className="glow-btn w-full sm:w-auto min-w-[280px] py-4 px-8 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 hover:from-blue-500 hover:to-cyan-300 text-white font-heading font-bold text-sm sm:text-base flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(0,229,255,0.35)] hover:shadow-[0_0_40px_rgba(0,229,255,0.5)] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
             <Trophy className="w-5 h-5" />
             <span>عرض قائمة المتصدرين (Leaderboard)</span>

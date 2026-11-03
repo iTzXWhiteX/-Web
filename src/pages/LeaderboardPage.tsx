@@ -328,13 +328,13 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
           onClick={() => setSelectedPlayer(null)}
         >
           <div
-            className="relative w-full max-w-lg glass-panel rounded-3xl border border-cyan-500/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(0,229,255,0.25)] text-right space-y-5"
+            className="relative w-full max-w-lg glow-window rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(0,229,255,0.25)] text-right space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
             <button
               onClick={() => setSelectedPlayer(null)}
-              className="absolute top-5 left-5 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="glow-btn absolute top-5 left-5 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
               aria-label="إغلاق"
             >
               <X className="w-5 h-5" />
@@ -452,7 +452,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
             <div className="pt-2">
               <button
                 onClick={() => setSelectedPlayer(null)}
-                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                className="glow-btn w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors cursor-pointer"
               >
                 إغلاق النافذة
               </button>
