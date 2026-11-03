@@ -48,7 +48,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         
         {/* Community Verification Badge */}
         <ScrollReveal delayMs={50}>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-cyan-500/25 text-cyan-300 text-xs font-semibold shadow-[0_0_20px_rgba(0,229,255,0.12)]">
+          <div className="glow-card inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 text-cyan-300 text-xs font-semibold shadow-[0_0_20px_rgba(0,229,255,0.12)]">
             <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
             <span>{welcomeBadgeText || 'المجتمع التنافسي الرسمي 2026'}</span>
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
@@ -136,7 +136,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             {/* Server Page (Unified About + News) */}
             <button
               onClick={() => onNavigate('server')}
-              className="py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer"
+              className="glow-btn py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer w-full text-right"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20 transition-colors">
@@ -150,7 +150,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             {/* Tier Test Page */}
             <button
               onClick={() => onNavigate('tier-test')}
-              className="py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer"
+              className="glow-btn py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer w-full text-right"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 transition-colors">
@@ -164,7 +164,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             {/* Leaderboard Page */}
             <button
               onClick={() => onNavigate('leaderboard')}
-              className="py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer"
+              className="glow-btn py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer w-full text-right"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20 transition-colors">
@@ -178,7 +178,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             {/* YouTube Channel Button */}
             <button
               onClick={handleOpenYouTube}
-              className="py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer"
+              className="glow-btn py-3 px-5 rounded-2xl glass-card text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer w-full text-right"
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-red-500/10 text-red-400 group-hover:bg-red-500/20 transition-colors">

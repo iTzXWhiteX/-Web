@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => onNavigate(link.id)}
                 className={`relative h-10 lg:h-11 px-3 lg:px-4.5 rounded-xl text-xs lg:text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-2 justify-center text-center whitespace-nowrap select-none backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                   active
-                    ? 'border-t-2 border-cyan-300 border-x-0 border-b-0 text-cyan-200 bg-gradient-to-b from-cyan-500/20 to-slate-900/80 shadow-[0_-3px_15px_rgba(0,229,255,0.25)] font-bold'
+                    ? 'glow-btn text-cyan-200 bg-gradient-to-b from-cyan-500/20 to-slate-900/80 font-bold'
                     : 'border-t-2 border-cyan-500/20 border-x-0 border-b-0 text-slate-300 bg-slate-900/50 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/70'
                 }`}
               >

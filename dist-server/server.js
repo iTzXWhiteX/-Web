@@ -1190,61 +1190,93 @@ function generateOAuthState(redirectUri) {
   const payload = `${nonce}:${timestamp}:${redirectUri}`;
   const sig = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
   const signedToken = Buffer.from(`${payload}:${sig}`).toString("base64url");
-  return { state: nonce, signedToken };
+  return { state: signedToken, signedToken };
 }
 function verifyOAuthState(incomingState, signedToken) {
-  if (!incomingState || !signedToken) return { valid: false };
-  try {
-    const decoded = Buffer.from(signedToken, "base64url").toString("utf-8");
-    const parts = decoded.split(":");
-    if (parts.length < 4) return { valid: false };
-    const nonce = parts[0];
-    const timestampStr = parts[1];
-    const sig = parts[parts.length - 1];
-    const redirectUri = parts.slice(2, parts.length - 1).join(":");
-    const timestamp = parseInt(timestampStr, 10);
-    if (isNaN(timestamp) || Date.now() - timestamp > 15 * 60 * 1e3) {
-      return { valid: false };
+  const candidateTokens = [incomingState, signedToken].filter(Boolean);
+  for (const token of candidateTokens) {
+    try {
+      const decoded = Buffer.from(token, "base64url").toString("utf-8");
+      const parts = decoded.split(":");
+      if (parts.length < 4) continue;
+      const nonce = parts[0];
+      const timestampStr = parts[1];
+      const sig = parts[parts.length - 1];
+      const redirectUri = parts.slice(2, parts.length - 1).join(":");
+      const timestamp = parseInt(timestampStr, 10);
+      if (isNaN(timestamp) || Date.now() - timestamp > 15 * 60 * 1e3) {
+        continue;
+      }
+      const payload = `${nonce}:${timestampStr}:${redirectUri}`;
+      const expected = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+      if (sig.length === expected.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
+        return { valid: true, redirectUri };
+      }
+    } catch {
     }
-    const payload = `${nonce}:${timestampStr}:${redirectUri}`;
-    const expected = crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
-    if (sig.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) {
-      return { valid: false };
-    }
-    if (nonce !== incomingState) {
-      return { valid: false };
-    }
-    return { valid: true, redirectUri };
-  } catch (err) {
-    return { valid: false };
   }
+  return { valid: false };
 }
 function setOAuthStateCookie(res, signedToken) {
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie(OAUTH_STATE_COOKIE_NAME, signedToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     maxAge: 15 * 60 * 1e3,
     path: "/"
   });
 }
 function clearOAuthStateCookie(res) {
+  const isProd = process.env.NODE_ENV === "production";
   res.clearCookie(OAUTH_STATE_COOKIE_NAME, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/"
   });
 }
 function getRedirectUri(req) {
+  if (process.env.DISCORD_REDIRECT_URI) {
+    return process.env.DISCORD_REDIRECT_URI.trim();
+  }
+  const clientOrigin = req.query?.origin || req.headers["origin"] || "";
+  if (clientOrigin && typeof clientOrigin === "string" && clientOrigin.startsWith("http")) {
+    try {
+      const parsed = new URL(clientOrigin);
+      if (!parsed.hostname.includes("aistudio.google.com")) {
+        return `${parsed.protocol}//${parsed.host}/auth/callback`;
+      }
+    } catch {
+    }
+  }
+  const referer = req.headers["referer"];
+  if (referer && typeof referer === "string" && referer.startsWith("http")) {
+    try {
+      const parsed = new URL(referer);
+      if (!parsed.hostname.includes("aistudio.google.com")) {
+        return `${parsed.protocol}//${parsed.host}/auth/callback`;
+      }
+    } catch {
+    }
+  }
+  const forwardedHost = req.get("x-forwarded-host");
+  if (forwardedHost && !forwardedHost.includes("aistudio.google.com")) {
+    const proto = req.get("x-forwarded-proto") || "https";
+    return `${proto}://${forwardedHost}/auth/callback`;
+  }
+  const host = req.get("host");
+  if (host && !host.includes("aistudio.google.com") && host !== "localhost:3000" && host !== "127.0.0.1:3000") {
+    const proto = req.get("x-forwarded-proto") || (req.secure ? "https" : "http");
+    return `${proto}://${host}/auth/callback`;
+  }
   const appUrl = process.env.APP_URL;
   if (appUrl) {
     const cleanUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
     return `${cleanUrl.replace(/\/$/, "")}/auth/callback`;
   }
-  const host = req.get("x-forwarded-host") || req.get("host") || "localhost:3000";
-  const proto = req.get("x-forwarded-proto") || (req.secure ? "https" : "http");
-  return `${proto}://${host}/auth/callback`;
+  const fallbackProto = req.secure ? "https" : "http";
+  return `${fallbackProto}://${host || "localhost:3000"}/auth/callback`;
 }
 function setSessionCookie(res, token) {
   const isProd = process.env.NODE_ENV === "production";
@@ -1273,13 +1305,22 @@ apiRouter.get("/config", (req, res) => {
   const isDiscordConfigured = !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET);
   const redirectUri = getRedirectUri(req);
   const settings = db.getSettings();
+  const devRedirectUri = "https://ais-dev-dp23obbeui2s6ee2zzaska-953765324818.europe-west2.run.app/auth/callback";
+  const sharedRedirectUri = "https://ais-pre-dp23obbeui2s6ee2zzaska-953765324818.europe-west2.run.app/auth/callback";
   res.json({
     serverName: settings.serverName,
     logoUrl: settings.logoUrl,
     youtubeUrl: settings.youtubeUrl,
     isDiscordConfigured,
     discordClientId: process.env.DISCORD_CLIENT_ID ? "Configured (Active)" : null,
-    redirectUri
+    redirectUri,
+    devRedirectUri,
+    sharedRedirectUri,
+    allowedRedirectUris: [
+      devRedirectUri,
+      sharedRedirectUri,
+      redirectUri
+    ].filter((v, i, a) => a.indexOf(v) === i)
   });
 });
 apiRouter.get("/public-data", (req, res) => {
@@ -1421,8 +1462,48 @@ async function handleDiscordCallback(req, res) {
     });
     if (!tokenResponse.ok) {
       const errBody = await tokenResponse.text();
-      console.error("Discord token exchange failed:", errBody);
-      throw new Error(`Failed to exchange code: ${tokenResponse.statusText}`);
+      console.error("Discord token exchange failed:", errBody, "effectiveRedirectUri:", effectiveRedirectUri);
+      let parsedErr = {};
+      try {
+        parsedErr = JSON.parse(errBody);
+      } catch {
+        parsedErr = { error: errBody };
+      }
+      res.status(400).send(`
+        <!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+          <head>
+            <meta charset="utf-8" />
+            <title>\u062A\u0639\u0630\u0631 \u0625\u062A\u0645\u0627\u0645 \u062A\u0648\u062B\u064A\u0642 \u062F\u064A\u0633\u0643\u0648\u0631\u062F</title>
+          </head>
+          <body style="font-family: system-ui, -apple-system, sans-serif; background: #060913; color: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px;">
+            <div style="background: rgba(10, 16, 31, 0.95); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 20px; padding: 32px; max-width: 520px; width: 100%; box-shadow: 0 0 50px rgba(239, 68, 68, 0.2); text-align: right;">
+              <h2 style="color: #ef4444; margin-top: 0; font-size: 22px; display: flex; align-items: center; gap: 8px;">
+                <span>\u0641\u0634\u0644 \u062A\u0648\u062B\u064A\u0642 \u062D\u0633\u0627\u0628 \u062F\u064A\u0633\u0643\u0648\u0631\u062F</span>
+              </h2>
+              <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                \u0631\u0641\u0636\u062A \u062E\u0648\u0627\u062F\u0645 \u062F\u064A\u0633\u0643\u0648\u0631\u062F \u0627\u0633\u062A\u0628\u062F\u0627\u0644 \u0631\u0645\u0632 \u0627\u0644\u062A\u0648\u062B\u064A\u0642. \u0627\u0644\u0633\u0628\u0628 \u0627\u0644\u0645\u0631\u062C\u0639 \u0645\u0646 \u062F\u064A\u0633\u0643\u0648\u0631\u062F:
+              </p>
+              <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 16px; margin: 16px 0; font-family: monospace; font-size: 13px; color: #fca5a5; direction: ltr; text-align: left; word-break: break-all;">
+                ${parsedErr.error_description || parsedErr.error || errBody}
+              </div>
+              <div style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 20px; font-size: 13px; color: #cbd5e1;">
+                <div style="font-weight: bold; color: #00e5ff; margin-bottom: 6px;">\u0627\u0644\u0631\u0627\u0628\u0637 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u0644\u062A\u062D\u0648\u064A\u0644 (Redirect URI):</div>
+                <div style="font-family: monospace; font-size: 12px; color: #ffffff; direction: ltr; text-align: left; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 6px; word-break: break-all;">
+                  ${effectiveRedirectUri}
+                </div>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: #94a3b8;">
+                  \u062A\u0623\u0643\u062F \u0645\u0646 \u0625\u0636\u0627\u0641\u0629 \u0647\u0630\u0627 \u0627\u0644\u0631\u0627\u0628\u0637 \u0628\u0627\u0644\u0636\u0628\u0637 \u062F\u0627\u062E\u0644 <strong style="color: #fff;">Discord Developer Portal -> OAuth2 -> Redirects</strong>
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="window.close()" style="background: #2563eb; color: white; border: none; padding: 10px 24px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer;">\u0625\u063A\u0644\u0627\u0642 \u0627\u0644\u0646\u0627\u0641\u0630\u0629</button>
+              </div>
+            </div>
+          </body>
+        </html>
+      `);
+      return;
     }
     const tokenData = await tokenResponse.json();
     const userResponse = await fetch("https://discord.com/api/users/@me", {
@@ -2252,7 +2333,10 @@ async function startServer() {
     fs3.mkdirSync(uploadsDir, { recursive: true });
   }
   app.use("/uploads", express2.static(uploadsDir));
-  app.get(["/auth/callback", "/auth/callback/"], handleDiscordCallback);
+  app.get(
+    ["/auth/callback", "/auth/callback/", "/api/auth/callback", "/api/auth/callback/"],
+    handleDiscordCallback
+  );
   app.use("/api", apiRouter);
   const distPath = path3.resolve(process.cwd(), "dist");
   const hasDist = fs3.existsSync(distPath);

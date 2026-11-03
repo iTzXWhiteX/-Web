@@ -53,10 +53,14 @@
 /* ==========================================================================
    PREMIUM GLASS & CARD SURFACES (White Kingdom Aesthetic)
    ========================================================================== */
+/* ==========================================================================
+   PREMIUM GLASS & CARD SURFACES (White Kingdom Aesthetic with 3-Color Frame)
+   ========================================================================== */
 .glass-panel,
 .glow-card,
 .glow-frame,
-.glow-window {
+.glow-window,
+.glass-card {
   position: relative;
   isolation: isolate;
   background: rgba(10, 16, 31, 0.88);
@@ -64,27 +68,24 @@
   -webkit-backdrop-filter: blur(20px);
   border-radius: 1rem;
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(0, 229, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), 0 0 16px -2px rgba(0, 229, 255, 0.28), 0 0 8px -1px rgba(37, 99, 235, 0.24);
+  border-color: transparent !important;
+}
+
+.glass-card {
+  background: rgba(12, 20, 38, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .glass-panel-subtle {
   background: rgba(8, 13, 26, 0.75);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.2);
 }
 
-.glass-card {
-  position: relative;
-  isolation: isolate;
-  background: rgba(12, 20, 38, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 1rem;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Continuous 3-color border rotation on frames, cards, and panels */
+/* Continuous 3-color animated rotating frames on accounts, news, cards, panels, and windows */
 .glass-panel::before,
 .glass-card::before,
 .glow-card::before,
@@ -92,24 +93,31 @@
 .glow-window::before {
   content: '';
   position: absolute;
-  inset: -1.5px;
+  inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 2.25px;
   background: conic-gradient(
     from var(--wk-angle, 0deg) at 50% 50%,
-    #2563eb 0%,
-    #00e5ff 33%,
-    #ffffff 66%,
-    #2563eb 100%
+    #1d4ed8 0%,
+    #2563eb 18%,
+    #3b82f6 26%,
+    #00e5ff 36%,
+    #22d3ee 50%,
+    #38bdf8 58%,
+    #ffffff 68%,
+    #f8fafc 80%,
+    #2563eb 92%,
+    #1d4ed8 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  animation: wk-rotate-angle 8s linear infinite;
-  z-index: 2;
-  opacity: 0.75;
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  animation: wk-rotate-angle 3.2s linear infinite;
+  z-index: 10;
+  opacity: 0.94;
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.65)) drop-shadow(0 0 3px rgba(37, 99, 235, 0.5));
+  transition: opacity 0.25s ease, filter 0.25s ease;
 }
 
 .glass-panel:hover::before,
@@ -118,14 +126,20 @@
 .glow-frame:hover::before,
 .glow-window:hover::before {
   opacity: 1;
-  filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.7)) drop-shadow(0 0 4px rgba(37, 99, 235, 0.5));
+  filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.95)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 6px rgba(37, 99, 235, 0.75));
 }
 
 .glass-card:hover,
 .glow-card:hover {
   background: rgba(14, 24, 46, 0.92);
-  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.7), 0 0 30px -5px rgba(0, 229, 255, 0.25), 0 0 15px -3px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.8), 0 0 28px -1px rgba(0, 229, 255, 0.55), 0 0 16px -1px rgba(37, 99, 235, 0.45), 0 0 8px 0px rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
+}
+
+.glass-panel:hover,
+.glow-frame:hover,
+.glow-window:hover {
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.8), 0 0 28px -1px rgba(0, 229, 255, 0.55), 0 0 16px -1px rgba(37, 99, 235, 0.45), 0 0 8px 0px rgba(255, 255, 255, 0.35);
 }
 
 /* Top-only glass border accent */
@@ -232,42 +246,50 @@
   background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 0 16px -2px rgba(0, 229, 255, 0.3), 0 0 8px -1px rgba(37, 99, 235, 0.28);
 }
 
 .glow-btn::before,
 .btn-premium::before {
   content: '';
   position: absolute;
-  inset: -1.5px;
+  inset: -2.25px;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 2.25px;
   background: conic-gradient(
     from var(--wk-angle, 0deg) at 50% 50%,
-    #2563eb 0%,
-    #00e5ff 33%,
-    #ffffff 66%,
-    #2563eb 100%
+    #1d4ed8 0%,
+    #2563eb 18%,
+    #3b82f6 26%,
+    #00e5ff 36%,
+    #22d3ee 50%,
+    #38bdf8 58%,
+    #ffffff 68%,
+    #f8fafc 80%,
+    #2563eb 92%,
+    #1d4ed8 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  animation: wk-rotate-angle 5s linear infinite;
+  animation: wk-rotate-angle 3.2s linear infinite;
   z-index: 2;
-  opacity: 0.82;
+  opacity: 0.94;
+  filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.65)) drop-shadow(0 0 3px rgba(37, 99, 235, 0.5));
   transition: opacity 0.25s ease, filter 0.25s ease;
 }
 
 .glow-btn:hover,
 .btn-premium:hover {
   transform: translateY(-1.5px);
-  box-shadow: 0 0 24px -2px rgba(0, 229, 255, 0.45), 0 0 14px -2px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 28px -1px rgba(0, 229, 255, 0.6), 0 0 16px -1px rgba(37, 99, 235, 0.5), 0 0 8px 0px rgba(255, 255, 255, 0.4);
 }
 
 .glow-btn:hover::before,
 .btn-premium:hover::before {
   opacity: 1;
-  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.85)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  filter: drop-shadow(0 0 11px rgba(0, 229, 255, 0.95)) drop-shadow(0 0 7px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 6px rgba(37, 99, 235, 0.75));
 }
 
 .glow-btn:active,
