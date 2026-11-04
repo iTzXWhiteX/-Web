@@ -1285,12 +1285,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
       )}
 
       {/* Arabic Tabs */}
-      <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-800 pb-3">
+      <div className="flex items-center gap-2 mb-8 border-b border-slate-800 pb-3 overflow-x-auto custom-scrollbar max-w-full">
         <button
           onClick={() => setActiveTab('loginLogs')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'loginLogs'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1300,9 +1300,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('testers')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'testers'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1312,9 +1312,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('profiles')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'profiles'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1324,9 +1324,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'settings'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1336,9 +1336,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('news')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'news'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1348,9 +1348,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('roles')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'roles'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1360,9 +1360,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('about')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'about'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1372,9 +1372,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('tierTest')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'tierTest'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1384,9 +1384,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('tiers')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'tiers'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1396,9 +1396,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('servers')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'servers'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1408,9 +1408,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
 
         <button
           onClick={() => setActiveTab('leaderboard')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer backdrop-blur-md whitespace-nowrap flex-shrink-0 ${
             activeTab === 'leaderboard'
-              ? 'border-t-2 border-cyan-300 bg-cyan-500 text-black font-bold shadow-[0_0_15px_rgba(0,229,255,0.3)]'
+              ? 'border-t-2 border-cyan-300 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
               : 'border-t-2 border-cyan-500/20 text-slate-300 bg-slate-900/60 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/80'
           }`}
         >
@@ -1485,7 +1485,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   onClick={() => setLoginLogSortBy('date')}
                   className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     loginLogSortBy === 'date'
-                      ? 'bg-cyan-500 text-black shadow-sm'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm'
                       : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
                   }`}
                 >
@@ -1496,7 +1496,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   onClick={() => setLoginLogSortBy('count')}
                   className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     loginLogSortBy === 'count'
-                      ? 'bg-cyan-500 text-black shadow-sm'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm'
                       : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
                   }`}
                 >

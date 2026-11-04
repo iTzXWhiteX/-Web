@@ -183,7 +183,7 @@ export const ServerPage: React.FC<ServerPageProps> = ({
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     selectedCategory === cat
-                      ? 'bg-cyan-500 text-black shadow-md font-bold'
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >

@@ -190,7 +190,7 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
             onClick={() => setMode('upload')}
             className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 cursor-pointer ${
               mode === 'upload'
-                ? 'bg-cyan-500 text-black shadow-sm font-bold'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -202,7 +202,7 @@ export const ImageUploadInput: React.FC<ImageUploadInputProps> = ({
             onClick={() => setMode('url')}
             className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 cursor-pointer ${
               mode === 'url'
-                ? 'bg-cyan-500 text-black shadow-sm font-bold'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm font-bold'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >

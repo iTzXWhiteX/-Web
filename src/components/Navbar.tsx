@@ -66,48 +66,59 @@ export const Navbar: React.FC<NavbarProps> = ({
     return activePage === link.id;
   };
 
+  const targetDiscordUrl = discordInviteUrl || 'https://discord.gg/whitekingdom';
+
+  const handleOpenDiscord = (e: React.MouseEvent) => {
+    try {
+      const win = window.open(targetDiscordUrl, '_blank', 'noopener,noreferrer');
+      if (!win) window.location.assign(targetDiscordUrl);
+    } catch {
+      window.location.assign(targetDiscordUrl);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-2xl bg-[#060913]/92 border-b border-cyan-500/15 shadow-[0_4px_25px_rgba(0,0,0,0.6)] transition-all select-none" dir="rtl">
       {/* Primary Top Bar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 h-18 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* RIGHT SECTION: Brand, Logo & Owner Badge */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
           <button
             onClick={() => {
               onNavigate('home');
               setMobileMenuOpen(false);
             }}
-            className="flex items-center gap-2.5 sm:gap-3 text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-xl p-1 cursor-pointer group"
+            className="flex items-center gap-2 sm:gap-3 text-right focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-xl p-1 cursor-pointer group min-w-0"
             title={`الانتقال للرئيسية - ${serverName}`}
           >
             <WhiteKingdomLogo size="sm" logoUrl={logoUrl} serverName={serverName} glow={false} />
-            <div className="flex flex-col text-right">
-              <span className="font-heading font-extrabold text-sm sm:text-base lg:text-lg text-white group-hover:text-cyan-300 transition-colors leading-tight">
+            <div className="flex flex-col text-right min-w-0">
+              <span className="font-heading font-extrabold text-sm sm:text-base lg:text-lg text-white group-hover:text-cyan-300 transition-colors leading-tight truncate">
                 {serverName}
               </span>
               {ownerName && (
-                <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-[11px] text-cyan-400 font-medium">
+                <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 text-[10px] sm:text-[11px] text-cyan-400 font-medium truncate">
                   {ownerAvatar ? (
                     <img
                       src={ownerAvatar}
                       alt={ownerName}
-                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-cyan-400/60 object-cover shadow-[0_0_8px_rgba(0,229,255,0.4)]"
+                      className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-cyan-400/60 object-cover shadow-[0_0_8px_rgba(0,229,255,0.4)] flex-shrink-0"
                     />
                   ) : (
-                    <Crown className="w-3 h-3 text-amber-400" />
+                    <Crown className="w-3 h-3 text-amber-400 flex-shrink-0" />
                   )}
-                  <span className="text-slate-400 text-[10px]">المالك:</span>
-                  <span className="text-cyan-300 font-bold hover:underline">@{ownerName}</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono hidden xl:inline-block">👑 مؤسس</span>
+                  <span className="text-slate-400 text-[10px] hidden sm:inline">المالك:</span>
+                  <span className="text-cyan-300 font-bold hover:underline truncate">@{ownerName}</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-mono hidden xl:inline-block flex-shrink-0">👑 مؤسس</span>
                 </div>
               )}
             </div>
           </button>
         </div>
 
-        {/* CENTER SECTION: Desktop Navigation Links (Visible on md, lg, xl screens) */}
-        <nav aria-label="التنقل الرئيسي" className="hidden md:flex items-center gap-1.5 lg:gap-2.5 flex-shrink-0">
+        {/* CENTER SECTION: Desktop Navigation Links (Visible on lg, xl screens) */}
+        <nav aria-label="التنقل الرئيسي" className="hidden lg:flex items-center gap-1 xl:gap-2 flex-shrink-0">
           {navLinks.map((link) => {
             const active = isLinkActive(link);
             const Icon = link.icon;
@@ -115,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={link.id}
                 onClick={() => onNavigate(link.id)}
-                className={`relative h-10 lg:h-11 px-3 lg:px-4.5 rounded-xl text-xs lg:text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-2 justify-center text-center whitespace-nowrap select-none backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+                className={`relative h-10 lg:h-11 px-2.5 xl:px-4 rounded-xl text-xs xl:text-sm font-semibold tracking-wide transition-all duration-200 cursor-pointer flex items-center gap-1.5 xl:gap-2 justify-center text-center whitespace-nowrap select-none backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                   active
                     ? 'glow-btn text-cyan-200 bg-gradient-to-b from-cyan-500/20 to-slate-900/80 font-bold'
                     : 'border-t-2 border-cyan-500/20 border-x-0 border-b-0 text-slate-300 bg-slate-900/50 hover:text-white hover:border-cyan-400/50 hover:bg-slate-800/70'
@@ -134,10 +145,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {user?.isAdmin && (
             <button
               onClick={() => onNavigate('admin')}
-              className={`glow-btn h-10 lg:h-11 px-3 lg:px-4 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none backdrop-blur-md focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+              className={`glow-btn h-10 lg:h-11 px-3 xl:px-4 rounded-xl text-xs font-mono font-bold tracking-wider transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap select-none backdrop-blur-md focus-visible:ring-2 focus-visible:ring-cyan-400 ${
                 activePage === 'admin'
-                  ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(0,229,255,0.35)]'
-                  : 'bg-cyan-950/70 text-cyan-300 hover:bg-cyan-900/80'
+                  ? 'bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_20px_rgba(0,229,255,0.45)]'
+                  : 'bg-cyan-950/70 text-cyan-300 hover:bg-cyan-900/80 hover:text-white'
               }`}
               title="لوحة تحكم وإدارة السيرفر"
             >
@@ -150,20 +161,19 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* LEFT SECTION: User Authentication & Discord Link (Visible on all screens) */}
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Discord Server Link (Desktop & Tablet) with dedicated animated perimeter & responsive click feedback */}
-          {discordInviteUrl && (
-            <a
-              href={discordInviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-join-server hidden sm:inline-flex h-9 lg:h-10 px-3.5 lg:px-4 rounded-xl text-xs font-bold items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap select-none"
-              title="انضم إلى سيرفر ديسكورد الرسمي"
-            >
-              <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-              </svg>
-              <span>انضمام</span>
-            </a>
-          )}
+          <a
+            href={targetDiscordUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleOpenDiscord}
+            className="btn-join-server hidden sm:inline-flex h-9 lg:h-10 px-3 lg:px-4 rounded-xl text-xs font-bold items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap select-none"
+            title="انضم إلى سيرفر ديسكورد الرسمي"
+          >
+            <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24">
+              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+            </svg>
+            <span>انضمام</span>
+          </a>
 
           {/* User Profile Trigger or Login Button (Always Visible) */}
           {user ? (
@@ -237,10 +247,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Hamburger toggle for mobile devices */}
+          {/* Hamburger toggle for mobile & tablet devices */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-colors cursor-pointer"
+            className="lg:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-colors cursor-pointer"
             aria-label="القائمة الرئيسية"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 text-cyan-400" /> : <Menu className="w-5 h-5" />}
@@ -248,8 +258,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* SECONDARY MOBILE BAR (Guarantees navigation buttons are always visible on mobile screens) */}
-      <div className="md:hidden border-t border-cyan-500/10 bg-[#060913]/95 px-2 py-1.5 overflow-x-auto no-scrollbar flex items-center justify-around gap-1">
+      {/* SECONDARY MOBILE BAR (Guarantees navigation buttons are always visible on mobile & tablet screens) */}
+      <div className="lg:hidden border-t border-cyan-500/10 bg-[#060913]/95 px-2 py-1.5 overflow-x-auto no-scrollbar flex items-center justify-around gap-1">
         {navLinks.map((link) => {
           const active = isLinkActive(link);
           const Icon = link.icon;
@@ -279,8 +289,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-semibold flex flex-col items-center justify-center gap-0.5 transition-colors whitespace-nowrap cursor-pointer ${
               activePage === 'admin'
-                ? 'text-amber-300 bg-amber-500/15 border-t-2 border-amber-400'
-                : 'text-slate-400 hover:text-amber-300'
+                ? 'text-white bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 font-bold border-t-2 border-cyan-300 shadow-[0_0_15px_rgba(0,229,255,0.4)]'
+                : 'text-slate-400 hover:text-cyan-300'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
@@ -289,9 +299,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
       </div>
 
-      {/* MOBILE DRAWER (For full expanded options) */}
+      {/* MOBILE DRAWER (For full expanded options on phones and tablets) */}
       {mobileMenuOpen && (
-        <div className="md:hidden glass-panel border-t border-cyan-500/20 px-5 pt-4 pb-6 space-y-4 animate-in slide-in-from-top-2 duration-200 text-right">
+        <div className="lg:hidden glass-panel border-t border-cyan-500/20 px-5 pt-4 pb-6 space-y-4 animate-in slide-in-from-top-2 duration-200 text-right">
           {/* User Status Card */}
           {user && (
             <button
@@ -356,8 +366,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }}
                 className={`flex items-center justify-between h-12 px-4 rounded-xl text-sm font-bold transition-all cursor-pointer mt-1 ${
                   activePage === 'admin'
-                    ? 'bg-cyan-500 text-black border border-cyan-400 shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-                    : 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40'
+                    ? 'bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold border border-cyan-300 shadow-[0_0_20px_rgba(0,229,255,0.45)]'
+                    : 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40 hover:text-white'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -371,20 +381,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action Buttons */}
           <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
-            {discordInviteUrl && (
-              <a
-                href={discordInviteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-                className="btn-join-server w-full h-11 flex items-center justify-center gap-2 px-4 rounded-xl text-xs font-bold cursor-pointer"
-              >
-                <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                  <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                </svg>
-                <span>انضم إلى سيرفر ديسكورد الرسمي</span>
-              </a>
-            )}
+            <a
+              href={targetDiscordUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                setMobileMenuOpen(false);
+                handleOpenDiscord(e);
+              }}
+              className="btn-join-server w-full h-11 flex items-center justify-center gap-2 px-4 rounded-xl text-xs font-bold cursor-pointer"
+            >
+              <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+              </svg>
+              <span>انضم إلى سيرفر ديسكورد الرسمي</span>
+            </a>
 
             {user ? (
               <button

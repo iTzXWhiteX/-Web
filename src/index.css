@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: #060913;
     color: #f1f5f9;
@@ -8,7 +14,19 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    max-width: 100%;
     overflow-x: hidden;
+    width: 100%;
+  }
+
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 
   h1, h2, h3, h4, h5, h6, .font-heading {
@@ -420,6 +438,11 @@
   transform: translateY(0) scale(0.97);
   filter: brightness(1.22);
   box-shadow: 0 2px 14px rgba(88, 101, 242, 0.4), 0 0 30px rgba(0, 229, 255, 0.7);
+}
+
+.btn-join-server > * {
+  position: relative;
+  z-index: 3;
 }
 
 /* Reduced motion support */

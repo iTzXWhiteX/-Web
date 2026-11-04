@@ -114,7 +114,7 @@ export const NewsPage: React.FC<NewsPageProps> = ({
               onClick={() => setSelectedCategory(cat)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(0,229,255,0.35)]'
+                  ? 'bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white font-bold shadow-[0_0_15px_rgba(0,229,255,0.4)]'
                   : 'bg-slate-900/80 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
