@@ -58,6 +58,7 @@ interface AdminDashboardPageProps {
   user: UserProfile;
   tiers?: TierDefinition[];
   testers?: TierTester[];
+  initialSettings?: WebsiteSettings;
   onRefreshPublicData: () => void;
   onNavigate: (page: string) => void;
 }
@@ -68,6 +69,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
   user,
   tiers,
   testers,
+  initialSettings,
   onRefreshPublicData,
   onNavigate,
 }) => {
@@ -83,8 +85,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     missingVariables: string[];
   } | null>(null);
 
-  // Settings state
-  const [settings, setSettings] = useState<WebsiteSettings>({
+  // Settings state - initialized with initialSettings if available
+  const [settings, setSettings] = useState<WebsiteSettings>(initialSettings || {
     serverName: '𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎',
     logoUrl: '/logo.png',
     youtubeUrl: '',
@@ -1240,13 +1242,6 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
     return list;
   }, [loginLogsList, loginLogSearchFilter, loginLogSortBy]);
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-slate-400" dir="rtl">
-        جاري تحميل لوحة التحكم...
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 relative z-10 animate-in fade-in duration-500" dir="rtl">

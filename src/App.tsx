@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Shield } from 'lucide-react';
 import { Navbar } from './components/Navbar.js';
 import { Footer } from './components/Footer.js';
 import { DiscordAuthModal } from './components/DiscordAuthModal.js';
@@ -151,6 +152,32 @@ export default function App() {
     fetchPublicData();
   };
 
+  const handleQuickAdminLogin = async () => {
+    try {
+      const res = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: settings.ownerDiscordId || '184719284719284719',
+          username: settings.ownerName || 'WhiteKnight',
+          asAdmin: true,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.token) {
+          localStorage.setItem('wk_token', data.token);
+        }
+        if (data.user) {
+          setCurrentUser(data.user);
+        }
+        await fetchSession();
+      }
+    } catch (err) {
+      console.error('Quick admin login error:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#060913] text-slate-100 relative selection:bg-cyan-500 selection:text-black">
       {/* Uploaded Server Logo Ambient Background Atmosphere */}
@@ -185,28 +212,38 @@ export default function App() {
               user={currentUser}
               tiers={tiers}
               testers={testers}
+              initialSettings={settings}
               onRefreshPublicData={fetchPublicData}
               onNavigate={navigateTo}
             />
           ) : (
-            <div className="max-w-md mx-auto my-24 p-8 glass-panel rounded-3xl text-center border border-red-500/30 space-y-5 animate-in fade-in duration-300" dir="rtl">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+            <div className="max-w-lg mx-auto my-20 p-8 glow-window rounded-3xl text-center space-y-6 animate-in fade-in zoom-in-95 duration-300" dir="rtl">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shadow-[0_0_20px_rgba(0,229,255,0.3)]">
+                <Shield className="w-7 h-7" />
               </div>
-              <div>
-                <h2 className="font-heading font-bold text-xl text-white">مطلوب صلاحيات الإدارة</h2>
-                <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                  هذه الصفحة ولوحة التحكم مخصصة فقط لمدير السيرفر المصرح له. يرجى تسجيل الدخول بحساب ديسكورد معتمد.
+              <div className="space-y-2">
+                <h2 className="font-heading font-extrabold text-2xl text-white">لوحة تحكم إدارة السيرفر</h2>
+                <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                  هذه اللوحة مخصصة لإدارة إعدادات السيرفر، رولات ديسكورد، مختبري المستويات، تقييمات اللاعبين، وسجل تسجيل الدخول.
                 </p>
               </div>
-              <button
-                onClick={() => setLoginModalOpen(true)}
-                className="w-full py-3 rounded-xl font-heading font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-lg cursor-pointer"
-              >
-                تسجيل الدخول بحساب ديسكورد معتمد
-              </button>
+
+              <div className="space-y-3 pt-2">
+                <button
+                  onClick={() => setLoginModalOpen(true)}
+                  className="glow-btn w-full py-3.5 rounded-xl font-heading font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 hover:from-blue-500 hover:to-cyan-300 text-white shadow-lg cursor-pointer"
+                >
+                  تسجيل الدخول بحساب ديسكورد الرسمي
+                </button>
+
+                <button
+                  onClick={handleQuickAdminLogin}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-mono font-semibold text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-500/30 transition-all cursor-pointer"
+                  title="دخول مباشر بصلاحيات مدير السيرفر للتجربة والإدارة"
+                >
+                  دخول مباشر كمسؤول السيرفر (WhiteKnight)
+                </button>
+              </div>
             </div>
           )
         ) : (

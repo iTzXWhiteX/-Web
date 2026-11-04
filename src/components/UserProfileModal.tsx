@@ -50,22 +50,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 select-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none overflow-y-auto"
       dir="rtl"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-xl glow-window rounded-3xl shadow-[0_0_50px_rgba(0,229,255,0.25)] overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-[calc(100vw-1.25rem)] sm:max-w-xl max-h-[92vh] flex flex-col glow-window rounded-3xl shadow-[0_0_50px_rgba(0,229,255,0.25)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Banner */}
-        <div className="relative h-28 sm:h-32 bg-gradient-to-r from-blue-950 via-slate-900 to-cyan-950 border-b border-cyan-500/20 flex items-end px-6 pb-3">
+        {/* Header Banner - Fixed at top */}
+        <div className="flex-shrink-0 relative h-28 sm:h-32 bg-gradient-to-r from-blue-950 via-slate-900 to-cyan-950 border-b border-cyan-500/20 flex items-end px-6 pb-3">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/15 via-transparent to-transparent pointer-events-none" />
           
           {/* Close button */}
           <button
             onClick={onClose}
-            className="glow-btn absolute top-4 left-4 p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-cyan-400 transition-colors cursor-pointer"
+            className="glow-btn absolute top-3.5 left-3.5 p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-cyan-400 transition-colors cursor-pointer"
             aria-label="إغلاق"
           >
             <X className="w-5 h-5" />
@@ -73,15 +73,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* Quick Admin Badge */}
           {user.isAdmin && (
-            <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/60 text-cyan-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(0,229,255,0.3)]">
+            <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/60 text-cyan-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(0,229,255,0.3)]">
               <Shield className="w-3.5 h-3.5" />
               <span>إدارة السيرفر</span>
             </div>
           )}
         </div>
 
-        {/* Profile Card Body */}
-        <div className="px-5 sm:px-7 pb-7 pt-2">
+        {/* Profile Card Body - Scrollable to prevent any screen overflow */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-7 pb-6 pt-2">
           {/* Avatar and Main Info row */}
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-14 sm:-mt-16 mb-5 text-center sm:text-right">
             <div className="relative group">

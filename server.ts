@@ -43,10 +43,8 @@ async function ensureFreshBundle(): Promise<void> {
   }
 }
 
-const distExists = fs.existsSync(path.resolve(__dirname, 'dist'));
-const shouldRunBundle = isProduction || distExists;
-
-if (shouldRunBundle) {
+// Only run bundled server in production; in development mode always run serverApp.ts directly for live Vite
+if (isProduction) {
   await ensureFreshBundle();
   if (fs.existsSync(bundledServer)) {
     const mod = await import(pathToFileURL(bundledServer).href);
@@ -54,12 +52,13 @@ if (shouldRunBundle) {
       await mod.startServer();
     }
   } else {
-    console.log('[Server] Starting serverApp.ts directly');
+    console.log('[Server] Starting serverApp.ts directly in production');
     const { startServer } = await import('./server/serverApp.ts');
     await startServer();
   }
 } else {
-  // In development, load serverApp.ts directly for live Vite middlewares
+  // In development, load serverApp.ts directly for live Vite middlewares and instant compilation
+  console.log('[Server] Starting in development mode with live Vite server');
   const { startServer } = await import('./server/serverApp.ts');
   await startServer();
 }

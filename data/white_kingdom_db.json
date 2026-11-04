@@ -1,90 +1,51 @@
 {
   "users": {
-    "184719284719284719": {
-      "id": "user_white_knight",
-      "discordId": "184719284719284719",
-      "username": "WhiteKnight",
-      "globalName": "WhiteKnight",
-      "avatar": "https://cdn.discordapp.com/embed/avatars/1.png",
-      "discriminator": "0",
-      "bio": "مؤسس مجتمع White Kingdom. مدرب ومختبر المستويات المعتمد.",
-      "createdAt": "2026-01-01T00:00:00.000Z",
-      "lastLogin": "2026-10-29T13:08:00.149Z",
-      "isAdmin": true
-    },
-    "482910482910482910": {
-      "id": "user_vortex",
-      "discordId": "482910482910482910",
-      "username": "VortexPvP",
-      "globalName": "Vortex [Apex]",
-      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-      "bio": "لاعب محترف في الكريستال والنيذرلايت.",
-      "favoriteMode": "mode_cpvp",
-      "createdAt": "2026-01-15T12:00:00.000Z",
-      "lastLogin": "2026-10-26T18:30:00.000Z",
-      "isAdmin": false
-    },
-    "819203810293819201": {
-      "id": "user_frostbyte",
-      "discordId": "819203810293819201",
-      "username": "FrostByte",
-      "globalName": "FrostByte",
-      "avatar": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-      "bio": "محترف مبارزات الفأس والدروع.",
-      "favoriteMode": "mode_netherite",
-      "createdAt": "2026-02-01T15:20:00.000Z",
-      "lastLogin": "2026-10-25T20:10:00.000Z",
-      "isAdmin": false
-    },
-    "391029384756102938": {
-      "id": "user_khaos",
-      "discordId": "391029384756102938",
-      "username": "KhaosDuelist",
-      "globalName": "Khaos",
-      "avatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
-      "bio": "مبارز Nodebuff وسيف.",
-      "favoriteMode": "mode_sword",
-      "createdAt": "2026-02-10T09:40:00.000Z",
-      "lastLogin": "2026-10-24T14:15:00.000Z",
-      "isAdmin": false
-    },
-    "999888777666555444": {
-      "id": "user_999888777666555444",
-      "discordId": "999888777666555444",
-      "username": "NewPlayer",
-      "globalName": "NewPlayer",
-      "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-      "discriminator": "0",
-      "bio": "",
-      "favoriteMode": "mode_netherite",
-      "createdAt": "2026-10-27T17:45:51.754Z",
-      "lastLogin": "2026-10-27T17:45:51.754Z",
-      "isAdmin": false
-    },
-    "123456789012345678": {
-      "id": "user_123456789012345678",
-      "discordId": "123456789012345678",
-      "username": "WhiteKnight",
-      "globalName": "WhiteKnight",
-      "avatar": "https://cdn.discordapp.com/embed/avatars/0.png",
-      "discriminator": "0",
-      "bio": "",
-      "createdAt": "2026-10-29T07:30:01.783Z",
-      "lastLogin": "2026-10-29T07:34:28.849Z",
-      "isAdmin": true
-    },
     "1324725244073873539": {
       "id": "user_1324725244073873539",
       "discordId": "1324725244073873539",
-      "username": "itz_white_kh",
-      "globalName": "itz_white_kh",
+      "username": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ",
+      "globalName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ",
       "avatar": "https://cdn.discordapp.com/embed/avatars/0.png",
       "discriminator": "0",
       "email": "supercrafting64@gmail.com",
       "bio": "",
-      "createdAt": "2026-10-29T07:53:06.430Z",
-      "lastLogin": "2026-10-30T12:30:13.597Z",
-      "isAdmin": true
+      "createdAt": "2026-11-01T18:43:15.967Z",
+      "lastLogin": "2026-11-04T10:10:30.018Z",
+      "loginCount": 6,
+      "isAdmin": true,
+      "assignedRoles": [],
+      "isPreCreated": false
+    },
+    "1483645685369933905": {
+      "id": "user_1483645685369933905",
+      "discordId": "1483645685369933905",
+      "username": "upr_a",
+      "globalName": "JOI",
+      "avatar": "https://cdn.discordapp.com/avatars/1483645685369933905/cbce020fddfd327d381f33c2e8308698.png?size=256",
+      "discriminator": "0",
+      "email": "upra300@gmail.com",
+      "bio": "",
+      "createdAt": "2026-11-01T18:50:18.522Z",
+      "lastLogin": "2026-11-01T18:50:18.522Z",
+      "loginCount": 1,
+      "isAdmin": false,
+      "assignedRoles": [],
+      "isPreCreated": false
+    },
+    "1523008875152937083": {
+      "id": "user_1523008875152937083",
+      "discordId": "1523008875152937083",
+      "username": "itz_kaion",
+      "avatar": "https://cdn.discordapp.com/avatars/1523008875152937083/74ac55471f30cacc4493a6c4c84e96d7.png?size=256",
+      "discriminator": "0",
+      "email": "yassinenebegh23@gmail.com",
+      "bio": "",
+      "createdAt": "2026-11-01T20:03:40.427Z",
+      "lastLogin": "2026-11-01T20:03:40.427Z",
+      "loginCount": 1,
+      "isAdmin": false,
+      "assignedRoles": [],
+      "isPreCreated": false
     }
   },
   "adminDiscordIds": [
@@ -95,227 +56,262 @@
   "settings": {
     "serverName": "𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎",
     "logoUrl": "/logo.png",
-    "youtubeUrl": "https://www.youtube.com/@WhiteKingdom",
-    "discordInviteUrl": "https://discord.gg/whitekingdom",
+    "youtubeUrl": "https://www.youtube.com/@itzwhitekh",
+    "discordInviteUrl": "https://discord.gg/8c6cGpnQEp",
     "ownerDiscordId": "1324725244073873539",
     "ownerName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ",
     "ownerAvatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
-    "ownerTag": "صاحب السيرفر ومؤسس الموقع",
-    "aboutContent": "أهلاً بكم في مجتمع 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎، سيرفر ديسكورد التنافسي المخصص لعشاق الألعاب والمبارزات.\n\nتم تأسيس السيرفر لجمع اللاعبين المتميزين لخوض التحديات والمباريات الحماسية، ومشاركة الاستراتيجيات، واختبار المستويات التنافسية.\n\nانضم إلينا في سيرفر الديسكورد لتكون جزءاً من هذا المجتمع وشارك في البطولات والتحديات المستمرة!",
+    "ownerTag": "يسطا Owner",
+    "aboutContent": "أهلاً بكم في مجتمع 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎، سيرفر ديسكورد التنافسي المخصص لعشاق الpvp والمبارزات لي ماينكرافت\n\nتم تأسيس السيرفر لجمع اللاعبين المتميزين لخوض التحديات والمباريات الحماسية، ومشاركة الاستراتيجيات، واختبار المستويات التنافسية.\n\nانضم إلينا في سيرفر الديسكورد لتكون جزءاً من هذا المجتمع وشارك في البطولات والتحديات المستمرة!",
     "tierTestContent": "تنبيه هام وملاحظة توضيحية:\nهذا نظام اختبار وتحديد مستويات (Tier Test) مجتمعي شخصي تم إنشاؤه لاستخدامنا الخاص داخل مجتمع الألعاب وسيرفر ديسكورد 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎.\n\nهذا الاختبار ليس نظام تصنيف رسمي لأي سيرفر ماين كرافت، ولا يرتبط بأي سيرفر أو جهة أو منصة تصنيف رسمية على الإطلاق.\n\nتُجرى الاختبارات في أي سيرفر يختاره الأدمن وبأي مود لعب، والترتيب يعكس التقييم التنافسي داخل مجتمعنا.\n\nأدناه قائمة بالسيرفرات المعتمدة لإجراء الاختبارات، وزر عرض قائمة المتصدرين.",
     "newsContent": "تابع آخر أخبار وتحديثات مجتمع 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎، مواعيد بطولات المبارزات، وتعديلات رولات ورومات السيرفر أولاً بأول.",
     "welcomeBadgeText": "المجتمع التنافسي الرسمي 2026"
   },
   "testServers": [
     {
-      "id": "srv_1",
-      "name": "Minemen Club",
-      "info": "شبكة الممارسة التنافسية العالمية. الريجنات المدعومة: EU, NA, AS. مثالي لجولات التدريب وسرعة الردود الحركية.",
-      "imageUrl": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80",
-      "order": 1
+      "id": "srv_1793558171256",
+      "info": "الالعاب الي تقدر تختبر فيها\nBedwars\nSkywars\nBridge\nSurvival Games",
+      "name": "The Hive",
+      "order": 1,
+      "imageUrl": "https://res.cloudinary.com/r1g1gh0s/image/upload/v1793716938/white_kingdom/sd4fvuphogmppafav5u7.webp"
     },
     {
-      "id": "srv_2",
-      "name": "PvP Land",
-      "info": "سيرفر البوتات التكتيكية وقوائم المبارزات ذات معدل التحديث العالي (High Tick-Rate).",
-      "imageUrl": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80",
-      "order": 2
+      "id": "srv_1793558238359",
+      "info": "الالعاب الي تقدر تختبر فيها\nSkywars brawl/ores\nBedfight\nSg\nBridge\nSumo\nMidfight",
+      "name": "Swim",
+      "order": 2,
+      "imageUrl": "https://res.cloudinary.com/r1g1gh0s/image/upload/v1793716958/white_kingdom/w9zaz9ezydsnqrkhqixd.webp"
+    }
+  ],
+  "testers": [
+    {
+      "id": "tester_1793717240787",
+      "order": 1,
+      "createdAt": "2026-11-03T14:47:20.787Z",
+      "discordId": "1324725244073873539",
+      "specialty": "All Gamemodes",
+      "updatedAt": "2026-11-03T14:47:33.826Z",
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
+      "minecraftName": "iTz XWhite2X",
+      "discordUsername": "itz_white_kh",
+      "discordDisplayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
     },
     {
-      "id": "srv_3",
-      "name": "Hypixel Duels",
-      "info": "أطوار المبارزات الكلاسيكية وبطولات التحديات السريعة.",
-      "imageUrl": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80",
-      "order": 3
+      "id": "tester_1793717175270",
+      "order": 2,
+      "createdAt": "2026-11-03T14:46:15.270Z",
+      "discordId": "1400028092386377868",
+      "specialty": "All Gamemodes",
+      "updatedAt": "2026-11-03T14:47:33.826Z",
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1400028092386377868/b4fc780224d1e3c1f45969b25381f3a6.png",
+      "minecraftName": "Zeyad gsx",
+      "discordUsername": "zeyadgsx1",
+      "discordDisplayName": "乙乇ㄚ卂ᗪ ᘜ丂乂"
     }
   ],
   "leaderboard": [
     {
-      "id": "lead_test_001",
-      "minecraftName": "WhiteKnightMC",
-      "discordId": "184719284719284719",
-      "discordDisplayName": "WhiteKnight",
-      "discordAvatar": "https://cdn.discordapp.com/embed/avatars/1.png",
-      "tierName": "HT1",
-      "tierRank": 10,
+      "id": "player_1793558535737",
+      "notes": "",
+      "tierName": "HT3",
+      "tierRank": 6,
+      "createdAt": "2026-11-01T18:42:15.737Z",
+      "discordId": "1523008875152937083",
+      "updatedAt": "2026-11-01T20:05:21.364Z",
       "gamesPlayed": [
         {
-          "gameName": "Netherite Pot (SMP)",
-          "score": "3 - 0",
-          "details": "تحكم كامل في الأسلحة واستخدام مثالي للشيلد"
-        },
-        {
-          "gameName": "Crystal PvP",
           "score": "3 - 1",
-          "details": "سرعة وضع وتفجير الكريستال بدقة عالية"
+          "details": "تحكم ممتاز في الشيلد وتوقيت التوتم",
+          "gameName": "Netherite Pot (SMP)"
         },
         {
-          "gameName": "Axe & Shield",
           "score": "3 - 0",
-          "details": "إتقان توقيت تعطيل الدرع والضربات النقدية"
+          "details": "سرعة وضع وتفجير الكريستال بدقة",
+          "gameName": "Crystal PvP"
         }
       ],
-      "notes": "لاعب متكامل واستثنائي في كافة الأطوار، رد فعل خارق وسيطرة تكتيكية كاملة على ساحة المعركة.",
-      "createdAt": "2026-10-15T14:00:00.000Z",
-      "updatedAt": "2026-10-15T14:00:00.000Z"
-    },
-    {
-      "id": "lead_test_002",
-      "minecraftName": "Vortex_1v1",
-      "discordId": "482910482910482910",
-      "discordDisplayName": "VortexPvP",
-      "discordAvatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-      "tierName": "HT1",
-      "tierRank": 10,
-      "gamesPlayed": [
-        {
-          "gameName": "Crystal PvP",
-          "score": "3 - 0",
-          "details": "تفجير سريع وسيطرة على مساحة الأوبسيديان"
-        },
-        {
-          "gameName": "Netherite Pot",
-          "score": "3 - 1",
-          "details": "حركة سريعة ومناورة ممتازة"
-        }
-      ],
-      "notes": "خبير كريستال من الطراز الأول. نصيحة للمستقبل: الحفاظ على ثبات المسافة في مبارزات السيوف الطويلة.",
-      "createdAt": "2026-10-18T16:30:00.000Z",
-      "updatedAt": "2026-10-18T16:30:00.000Z"
-    },
-    {
-      "id": "lead_test_004",
-      "minecraftName": "FrostByte_",
-      "discordId": "819203810293819201",
-      "discordDisplayName": "FrostByte",
-      "discordAvatar": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&auto=format&fit=crop&q=80",
-      "tierName": "HT1",
-      "tierRank": 10,
-      "gamesPlayed": [
-        {
-          "gameName": "Axe & Shield",
-          "score": "3 - 1",
-          "details": "صد دفاعي ممتاز وضربات حرجة دقيقة"
-        },
-        {
-          "gameName": "Sword & Shield",
-          "score": "3 - 0",
-          "details": "إتقان تقنية W-Tap وسرعة تثبيت الخصم"
-        }
-      ],
-      "notes": "دفاع قوي يصعب اختراقه وتمركز رائع، ينصح بزيادة وتيرة الهجوم الضاغط.",
-      "createdAt": "2026-10-20T19:00:00.000Z",
-      "updatedAt": "2026-10-20T19:00:00.000Z"
-    },
-    {
-      "id": "lead_test_006",
-      "minecraftName": "KhaosDuelist",
-      "discordId": "391029384756102938",
-      "discordDisplayName": "KhaosDuelist",
-      "discordAvatar": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
-      "tierName": "HT2",
-      "tierRank": 8,
-      "gamesPlayed": [
-        {
-          "gameName": "Nodebuff (PotPvP)",
-          "score": "3 - 2",
-          "details": "رمي بوشنات ممتاز وسرعة دوران عالية"
-        },
-        {
-          "gameName": "Netherite Pot",
-          "score": "1 - 3",
-          "details": "أداء تنافسي قوي مع الحاجة لتنظيم استهلاك التوتيم"
-        }
-      ],
-      "notes": "أداء مشرف وسرعة حركة ممتازة. التقييم الحالي HT2 مع إمكانية الترقية إلى HT1 بعد تحسين إدارة الموارد.",
-      "createdAt": "2026-10-22T17:45:00.000Z",
-      "updatedAt": "2026-10-22T17:45:00.000Z"
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1523008875152937083/74ac55471f30cacc4493a6c4c84e96d7.png?size=256",
+      "minecraftName": "اختبار 1",
+      "discordUsername": "itz_kaion",
+      "discordDisplayName": "itz_kaion"
     }
   ],
   "newsArticles": [
     {
-      "id": "news_001",
-      "title": "تحديث نظام الرولات وافتتاح باب اختبارات المستويات الرسمية",
-      "content": "نعلن لجميع أعضاء المجتمع عن إطلاق نظام الرولات المطور. أصبح بإمكانكم التقدم لطلب اختبار المستويات باشراف @Founder & Owner وفريق @Official Tester.\n\nسيتم تقييم اللاعبين في رومات التدريب المخصصة #طلب-اختبار، ومنح المتفوقين رول @Tier 1 Apex ورول @Gladiator!\n\nترقبوا تفاصيل البطولات القادمة في روم #إعلانات-البطولات.",
-      "category": "إعلان هام",
-      "imageUrl": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80",
+      "id": "news_1793557874344",
+      "title": "اطلاق الموقع الرسمي لسيرفر لي سيرفر 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎",
       "pinned": true,
-      "createdAt": "2026-10-28T21:00:00.000Z",
-      "updatedAt": "2026-10-28T21:00:00.000Z"
-    },
-    {
-      "id": "news_002",
-      "title": "إطلاق بطولة White Kingdom الأولى للمبارزات التنافسية",
-      "content": "ندعو كافة مقاتلينا وحاملي رول @Gladiator و @Kingdom Member للمشاركة في أول بطولة رسمية لعام 2026! جوائز نقدية وترقية مباشرة لأعلى التقييمات في قائمة المتصدرين.\n\nالتسجيل متاح الآن في روم #تسجيل-البطولة.",
-      "category": "بطولات",
-      "imageUrl": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&auto=format&fit=crop&q=80",
-      "pinned": false,
-      "createdAt": "2026-10-26T15:30:00.000Z",
-      "updatedAt": "2026-10-26T15:30:00.000Z"
+      "content": "👑 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎\n\nنعلن رسميًا عن افتتاح واكتمال الموقع الرسمي للسيرفر!\n\nبعد العمل على تطوير الموقع وتجهيزه أصبح الموقع الرسمي لـ 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎 جاهزًا لاستقبالكم ليكون المكان الأساسي لمتابعة كل ما يخص السيرفر ولاعبيه\n\n🌐 إيه اللي هتلاقوه في الموقع؟\n\n📢 آخر أخبار السيرفر\nتابعوا آخر المستجدات والإعلانات وكل ما هو جديد داخل مجتمعنا\n\n🏆 تقييمات اللاعبين بالتفاصيل\nاطّلعوا على تقييمات اللاعبين ونتائج اختباراتهم والتفاصيل الخاصة بكل لاعب تم تقييمه\n\n📊 Leaderboard للاعبين\nتابعوا ترتيب اللاعبين الذين تم تقييمهم وقارنوا بين مستوياتهم وشوفوا مين متصدر القائمة\n\n⚔️ والمزيد قادم!\nالموقع هو خطوة جديدة في تطوير مجتمعنا وتنظيم نظام التقييمات وتقديم تجربة أفضل للاعبين\n\n🔥 دي مجرد البداية واللي جاي أكبر!\n\nندعو الجميع لزيارة الموقع واكتشاف كل ما يقدمه والانضمام إلينا في رحلتنا نحو تطوير مجتمع 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎\n\n━━━━━━━━━━━━━━━━━━\n\n𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎\nOne Kingdom One Standard 👑",
+      "category": "إعلان هام",
+      "imageUrl": "https://res.cloudinary.com/r1g1gh0s/image/upload/v1793717017/white_kingdom/ua8pfu3aezalw2mt45jo.webp",
+      "createdAt": "2026-11-01T18:31:14.344Z",
+      "updatedAt": "2026-11-03T14:43:39.953Z"
     }
   ],
   "roles": [
     {
-      "id": "role_founder",
-      "name": "Founder & Owner",
-      "color": "#00e5ff",
+      "id": "role_1793557967512",
+      "name": "Owner",
+      "color": "#a80000",
       "emoji": "👑",
       "order": 1,
-      "description": "مؤسس السيرفر وصاحب الموقع وإدارته العليا.",
-      "criteria": "تُمنح حصرياً لمالك ومؤسس سيرفر ومجتمع White Kingdom وله كامل الصلاحيات الإدارية والتقنية.",
-      "showInList": true
+      "criteria": "لي وايت عمك",
+      "showInList": true,
+      "description": "تكون صاحب السيرفر(:"
     },
     {
-      "id": "role_tester",
-      "name": "Official Tester",
-      "color": "#38bdf8",
-      "emoji": "⚔️",
+      "id": "role_1793558010866",
+      "name": "Member",
+      "color": "#6e6e6e",
+      "emoji": "👑",
       "order": 2,
-      "description": "المسؤول عن اختبارات وتقييم المستويات والمبارزات.",
-      "criteria": "تُمنح للمختبرين المعتمدين والموثوقين من قبل الإدارة بعد اجتياز فحص الخبرة في التحكيم وتقييم مهارات اللاعبين.",
-      "showInList": true
+      "criteria": "اي حد",
+      "showInList": true,
+      "description": "رول لي اعضاء السيرفر"
     },
     {
-      "id": "role_ht1",
-      "name": "Tier 1 Apex",
-      "color": "#f59e0b",
-      "emoji": "🏆",
+      "id": "role_1793558063565",
+      "name": "Taster",
+      "color": "#ef4444",
+      "emoji": "⚔️",
       "order": 3,
-      "description": "حملة تصنيف HT1 النخبوي وأعلى رتبة تنافسية.",
-      "criteria": "تُمنح للمقاتلين الذين يجتازون اختبار المستويات بمستوى استثنائي (High Tier 1) ويثبتون جدارتهم في المبارزات المعتمدة.",
-      "showInList": true
+      "criteria": "يوصل لي فوق الlt2",
+      "showInList": true,
+      "description": "لي المختبرين او الtier testers"
     },
     {
-      "id": "role_gladiator",
-      "name": "Gladiator",
-      "color": "#a855f7",
-      "emoji": "🛡️",
+      "id": "role_1793717473511",
+      "name": "Pack Manger",
+      "color": "#00ff00",
+      "emoji": "📂",
       "order": 4,
-      "description": "مقاتلو السيرفر المعتمدين والمشاركين بالبطولات.",
-      "criteria": "تُمنح لجميع المقاتلين الذين أتموا اختبار المستوى الأولي أو شاركوا في بطولات وتحديات السيرفر.",
-      "showInList": true
-    },
-    {
-      "id": "role_member",
-      "name": "Kingdom Member",
-      "color": "#94a3b8",
-      "emoji": "⚡",
-      "order": 5,
-      "description": "أعضاء مجتمع White Kingdom.",
-      "criteria": "الرول العام الممنوح لجميع الأعضاء فور انضمامهم لسيرفر الديسكورد وتوثيق عضويتهم.",
-      "showInList": true
+      "criteria": "تمنح للشخص الذي ينڜر باكات كثيرة",
+      "showInList": true,
+      "description": "ارسال باكات و مودات في شانل مميز"
     }
   ],
   "tiers": [
-    { "name": "HT1", "label": "High Tier 1 (Apex Master)", "rank": 10, "color": "#00e5ff" },
-    { "name": "LT1", "label": "Low Tier 1", "rank": 9, "color": "#38bdf8" },
-    { "name": "HT2", "label": "High Tier 2", "rank": 8, "color": "#0088ff" },
-    { "name": "LT2", "label": "Low Tier 2", "rank": 7, "color": "#60a5fa" },
-    { "name": "HT3", "label": "High Tier 3", "rank": 6, "color": "#818cf8" },
-    { "name": "LT3", "label": "Low Tier 3", "rank": 5, "color": "#a5b4fc" },
-    { "name": "HT4", "label": "High Tier 4", "rank": 4, "color": "#94a3b8" },
-    { "name": "LT4", "label": "Low Tier 4", "rank": 3, "color": "#64748b" },
-    { "name": "HT5", "label": "High Tier 5", "rank": 2, "color": "#475569" },
-    { "name": "LT5", "label": "Low Tier 5 (Novice)", "rank": 1, "color": "#334155" }
-  ]
+    {
+      "name": "HT1",
+      "rank": 10,
+      "color": "#00e5ff",
+      "label": "High Tier 1 (Apex Master)"
+    },
+    {
+      "name": "LT1",
+      "rank": 9,
+      "color": "#ef4444",
+      "label": "Low Tier 1"
+    },
+    {
+      "name": "HT2",
+      "rank": 8,
+      "color": "#00ff00",
+      "label": "High Tier 2"
+    },
+    {
+      "name": "LT2",
+      "rank": 7,
+      "color": "#35a800",
+      "label": "Low Tier 2"
+    },
+    {
+      "name": "HT3",
+      "rank": 6,
+      "color": "#818cf8",
+      "label": "High Tier 3"
+    },
+    {
+      "name": "LT3",
+      "rank": 5,
+      "color": "#a5b4fc",
+      "label": "Low Tier 3"
+    },
+    {
+      "name": "HT4",
+      "rank": 4,
+      "color": "#94a3b8",
+      "label": "High Tier 4"
+    },
+    {
+      "name": "LT4",
+      "rank": 3,
+      "color": "#64748b",
+      "label": "Low Tier 4"
+    },
+    {
+      "name": "HT5",
+      "rank": 2,
+      "color": "#475569",
+      "label": "High Tier 5"
+    },
+    {
+      "name": "LT5",
+      "rank": 1,
+      "color": "#334155",
+      "label": "Low Tier 5 (Novice)"
+    }
+  ],
+  "loginLogs": [
+    {
+      "id": "log_1793716848498_qs602",
+      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
+      "loginAt": "2026-11-03T14:40:48.498Z",
+      "username": "itz_white_kh",
+      "discordId": "1324725244073873539",
+      "ipAddress": "10.0.0.2",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "loginCount": 5,
+      "displayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
+    },
+    {
+      "id": "log_1793698355258_8hb38",
+      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
+      "loginAt": "2026-11-03T09:32:35.258Z",
+      "username": "itz_white_kh",
+      "discordId": "1324725244073873539",
+      "ipAddress": "10.0.0.2",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "loginCount": 3,
+      "displayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
+    }
+  ],
+  "discordProfileCache": {
+    "1324725244073873539": {
+      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
+      "cachedAt": "2026-11-03T14:40:48.498Z",
+      "username": "itz_white_kh",
+      "displayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
+    },
+    "1378121299074748537": {
+      "avatar": "https://cdn.discordapp.com/avatars/1378121299074748537/3fd94fe10f67af84a7933f6f3e3358b2.png",
+      "cachedAt": "2026-11-03T09:34:00.865Z",
+      "username": "itzrivx",
+      "displayName": "ItzRivx"
+    },
+    "1400028092386377868": {
+      "avatar": "https://cdn.discordapp.com/avatars/1400028092386377868/b4fc780224d1e3c1f45969b25381f3a6.png",
+      "cachedAt": "2026-11-03T14:45:57.631Z",
+      "username": "zeyadgsx1",
+      "displayName": "乙乇ㄚ卂ᗪ ᘜ丂乂"
+    },
+    "1484598484559593613": {
+      "avatar": "https://cdn.discordapp.com/avatars/1484598484559593613/47388291af2e21bb90bb8b318d564fbe.png",
+      "cachedAt": "2026-11-03T09:34:06.538Z",
+      "username": "steveyt6251",
+      "displayName": "ᴰᴸ¹⁰¹| 𝚂𝚝𝚎𝚟𝚎"
+    },
+    "1521848696831086702": {
+      "avatar": "https://cdn.discordapp.com/avatars/1521848696831086702/d146d78c42736a3625626ef9fd6bcdef.png",
+      "cachedAt": "2026-11-03T09:33:48.742Z",
+      "username": "busy_57252",
+      "displayName": "亗 Ataski Uchiha 亗"
+    },
+    "1523008875152937083": {
+      "avatar": "https://cdn.discordapp.com/avatars/1523008875152937083/74ac55471f30cacc4493a6c4c84e96d7.png?size=256",
+      "cachedAt": "2026-11-03T09:33:56.714Z",
+      "username": "itz_kaion",
+      "displayName": "itz_kaion"
+    }
+  }
 }

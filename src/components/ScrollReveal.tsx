@@ -37,18 +37,15 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // Re-triggers on scrolling down and up
           if (entry.isIntersecting) {
             setIsVisible(true);
-          } else {
-            // Un-reveal when out of viewport so it re-animates smoothly
-            setIsVisible(false);
+            observer.unobserve(entry.target);
           }
         });
       },
       {
-        threshold: 0.08,
-        rootMargin: '20px 0px -40px 0px',
+        threshold: 0.05,
+        rootMargin: '40px 0px 40px 0px',
       }
     );
 
