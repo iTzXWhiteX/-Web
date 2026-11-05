@@ -13,6 +13,7 @@ import {
 import { PublicLeaderboardItem, TierDefinition, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
 import { ScrollReveal } from '../components/ScrollReveal.js';
 import BorderGlow from '../components/BorderGlow.js';
+import { handleAvatarImgError } from '../utils/discordAvatar.js';
 
 interface LeaderboardPageProps {
   leaderboard: PublicLeaderboardItem[];
@@ -114,7 +115,8 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                       <img
                         src={top2.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                         alt={top2.discordDisplayName}
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-300 shadow-md mx-auto"
+                        onError={(e) => handleAvatarImgError(e)}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-300 shadow-md mx-auto bg-slate-950"
                       />
                       <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-300 text-black font-bold text-xs flex items-center justify-center font-mono">
                         2
@@ -149,7 +151,8 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                     <img
                       src={top1.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                       alt={top1.discordDisplayName}
-                      className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-lg mx-auto"
+                      onError={(e) => handleAvatarImgError(e)}
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-lg mx-auto bg-slate-950"
                     />
                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-400 text-black font-black text-xs shadow-md">
                       #1 الأول
@@ -183,7 +186,8 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                       <img
                         src={top3.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                         alt={top3.discordDisplayName}
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-700 shadow-md mx-auto"
+                        onError={(e) => handleAvatarImgError(e)}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-700 shadow-md mx-auto bg-slate-950"
                       />
                       <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-700 text-white font-bold text-xs flex items-center justify-center font-mono">
                         3
@@ -296,10 +300,8 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                         <img
                           src={player.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                           alt={player.discordDisplayName}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-cyan-500/40 shadow-sm flex-shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://cdn.discordapp.com/embed/avatars/0.png';
-                          }}
+                          onError={(e) => handleAvatarImgError(e)}
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-cyan-500/40 shadow-sm flex-shrink-0 bg-slate-950"
                         />
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs sm:text-sm font-semibold text-slate-200 truncate">
@@ -373,7 +375,8 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
               <img
                 src={selectedPlayer.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                 alt={selectedPlayer.discordDisplayName}
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-500/60 shadow-lg"
+                onError={(e) => handleAvatarImgError(e)}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-500/60 shadow-lg bg-slate-950"
               />
               <div className="space-y-1">
                 <div className="text-xs text-cyan-400 font-mono font-semibold">

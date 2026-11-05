@@ -53,6 +53,7 @@ import {
 import { DiscordFormattedText } from '../utils/discordMentionParser.js';
 import { ImageUploadInput } from '../components/ImageUploadInput.js';
 import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
+import { handleAvatarImgError } from '../utils/discordAvatar.js';
 
 interface AdminDashboardPageProps {
   user: UserProfile;
@@ -3493,7 +3494,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                   <img
                     src={playerDiscordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                     alt="Discord Avatar"
-                    className="w-10 h-10 rounded-full border border-cyan-500/50 object-cover"
+                    onError={(e) => handleAvatarImgError(e)}
+                    className="w-10 h-10 rounded-full border border-cyan-500/50 object-cover bg-slate-950"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-slate-400">معاينة الحساب كما سيظهر للجميع في لوحة الصدارة:</div>
@@ -3734,7 +3736,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                         <img
                           src={player.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                           alt={player.discordDisplayName}
-                          className="w-10 h-10 rounded-full object-cover border border-cyan-500/40"
+                          onError={(e) => handleAvatarImgError(e)}
+                          className="w-10 h-10 rounded-full object-cover border border-cyan-500/40 bg-slate-950"
                         />
                         <div>
                           <div className="font-bold text-white text-sm flex items-center gap-2">
@@ -4107,7 +4110,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({
                           <img
                             src={p.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                             alt={p.username}
-                            className="w-12 h-12 rounded-xl border border-cyan-400/60 object-cover flex-shrink-0"
+                            onError={(e) => handleAvatarImgError(e, p.discordId)}
+                            className="w-12 h-12 rounded-xl border border-cyan-400/60 object-cover flex-shrink-0 bg-slate-950"
                           />
                           <div className="min-w-0 text-right">
                             <div className="font-heading font-bold text-sm text-white truncate flex items-center gap-1.5">

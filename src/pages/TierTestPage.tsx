@@ -210,7 +210,9 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
                       alt={tester.discordDisplayName || tester.minecraftName}
                       className="w-14 h-14 rounded-2xl object-cover border-2 border-cyan-500/30 group-hover:border-cyan-400 transition-colors shadow-md"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/logo.png';
+                        const t = e.target as HTMLImageElement;
+                        t.onerror = null;
+                        t.src = '/logo.png';
                       }}
                     />
                     <div className="absolute -bottom-1 -right-1 p-1 rounded-lg bg-[#060913] border border-cyan-500/40 text-cyan-400 shadow-sm">

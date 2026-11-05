@@ -455,6 +455,23 @@ apiRouter.get('/user/my-profile', (req: Request, res: Response) => {
   });
 });
 
+// Authenticated user can link / update their Minecraft IGN
+apiRouter.post('/user/minecraft-name', requireAuth, async (req: Request, res: Response) => {
+  const user = (req as any).user || getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'غير مصرح. يرجى تسجيل الدخول.' });
+    return;
+  }
+  const { minecraftName } = req.body;
+  const cleanName = typeof minecraftName === 'string' ? minecraftName.trim() : '';
+  const updated = await db.updateUserMinecraftName(user.discordId, cleanName);
+  res.json({
+    success: true,
+    user: updated || user,
+    message: cleanName ? 'تم تحديث حساب ماين كرافت بنجاح.' : 'تمت إزالة ربط حساب ماين كرافت.',
+  });
+});
+
 // ==========================================
 // --- PROTECTED ADMINISTRATOR ENDPOINTS ---
 // ==========================================

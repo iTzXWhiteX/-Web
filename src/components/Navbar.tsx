@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Shield,
   LogOut,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types/pvp.js';
 import { WhiteKingdomLogo } from './WhiteKingdomLogo.js';
+import { handleAvatarImgError, resolveAvatarUrl } from '../utils/discordAvatar.js';
 
 interface NavbarProps {
   user: UserProfile | null;
@@ -46,6 +47,39 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside or pressing Escape key
+  useEffect(() => {
+    if (!userDropdownOpen) return;
+
+    const handlePointerDownOutside = (event: MouseEvent | TouchEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDownOutside);
+    document.addEventListener('touchstart', handlePointerDownOutside);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDownOutside);
+      document.removeEventListener('touchstart', handlePointerDownOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [userDropdownOpen]);
+
+  // Close dropdown upon page change or when mobile drawer opens
+  useEffect(() => {
+    setUserDropdownOpen(false);
+  }, [activePage, mobileMenuOpen]);
 
   // Exact navigation items in Arabic RTL order:
   // 1. الرئيسية
@@ -103,6 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <img
                       src={ownerAvatar}
                       alt={ownerName}
+                      onError={(e) => handleAvatarImgError(e)}
                       className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border border-cyan-400/60 object-cover shadow-[0_0_8px_rgba(0,229,255,0.4)] flex-shrink-0"
                     />
                   ) : (
@@ -177,38 +212,43 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* User Profile Trigger or Login Button (Always Visible) */}
           {user ? (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                 className="glow-btn h-9 sm:h-10 flex items-center gap-2 p-1 pl-2.5 sm:pl-3 rounded-full bg-slate-900/90 border border-slate-700/70 hover:border-cyan-400 transition-all cursor-pointer group focus-visible:ring-2 focus-visible:ring-cyan-400"
                 aria-label="قائمة حساب المستخدم"
+                aria-expanded={userDropdownOpen}
+                aria-haspopup="true"
               >
                 <img
-                  src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                  src={resolveAvatarUrl(user.avatar, user.discordId)}
                   alt={user.username}
-                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-cyan-400/60 object-cover"
+                  onError={(e) => handleAvatarImgError(e, user.discordId)}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-cyan-400/60 object-cover bg-slate-950"
                 />
                 <div className="text-right leading-tight max-w-[85px] sm:max-w-[120px] hidden xs:block">
                   <div className="text-xs font-bold text-white group-hover:text-cyan-300 flex items-center gap-1 truncate">
                     <span className="truncate">{user.globalName || user.username}</span>
                   </div>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-300 transition-transform" />
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-300 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {userDropdownOpen && (
                 <div
-                  className="absolute left-0 sm:left-0 right-auto mt-2 w-72 max-w-[calc(100vw-1.5rem)] max-h-[85vh] overflow-y-auto glow-window rounded-2xl shadow-2xl py-2 z-50 text-right animate-in fade-in zoom-in-95 duration-150"
-                  onClick={() => setUserDropdownOpen(false)}
+                  className="absolute left-0 sm:left-0 right-auto mt-2 w-64 sm:w-72 max-w-[calc(100vw-1.5rem)] max-h-[85vh] overflow-y-auto glow-window rounded-2xl shadow-2xl py-2 z-50 text-right animate-in fade-in zoom-in-95 duration-150"
                 >
                   <div className="px-4 py-2.5 border-b border-slate-800">
                     <p className="text-[11px] text-slate-400">حساب ديسكورد المسجل</p>
-                    <p className="text-sm font-bold text-white truncate">{user.username}</p>
+                    <p className="text-sm font-bold text-white truncate">{user.globalName || user.username}</p>
                     <p className="text-[11px] font-mono text-cyan-400 mt-0.5 break-all" dir="ltr">ID: {user.discordId}</p>
                   </div>
 
                   <button
-                    onClick={onOpenProfile}
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      onOpenProfile();
+                    }}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-white hover:bg-cyan-500/15 hover:text-cyan-300 transition-colors text-right font-semibold cursor-pointer"
                   >
                     <User className="w-3.5 h-3.5 text-cyan-400" />
@@ -217,7 +257,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {user.isAdmin && (
                     <button
-                      onClick={() => onNavigate('admin')}
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onNavigate('admin');
+                      }}
                       className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-cyan-300 hover:bg-cyan-500/20 transition-colors text-right font-semibold cursor-pointer"
                     >
                       <Shield className="w-3.5 h-3.5 text-cyan-400" />
@@ -226,7 +269,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
 
                   <button
-                    onClick={onLogout}
+                    onClick={() => {
+                      setUserDropdownOpen(false);
+                      onLogout();
+                    }}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:bg-red-950/30 transition-colors text-right font-medium cursor-pointer border-t border-slate-800/80 mt-1"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -312,9 +358,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md text-right hover:border-cyan-400/50 transition-colors cursor-pointer"
             >
               <img
-                src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                src={resolveAvatarUrl(user.avatar, user.discordId)}
                 alt={user.username}
-                className="w-10 h-10 rounded-full border border-cyan-500/50 object-cover"
+                onError={(e) => handleAvatarImgError(e, user.discordId)}
+                className="w-10 h-10 rounded-full border border-cyan-500/50 object-cover bg-slate-950"
               />
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-white text-sm truncate flex items-center gap-1.5">

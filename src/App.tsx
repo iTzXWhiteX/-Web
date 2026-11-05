@@ -330,6 +330,7 @@ export default function App() {
         onLogout={handleLogout}
         onNavigateToAdmin={() => navigateTo('admin')}
         onNavigateToTierTest={() => navigateTo('tier-test')}
+        onUserUpdate={(updated) => setCurrentUser(updated)}
       />
 
       {/* Minimal Footer */}

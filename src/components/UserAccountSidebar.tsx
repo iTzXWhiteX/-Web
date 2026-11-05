@@ -13,6 +13,7 @@ import {
 import { UserProfile, ServerRole, TierDefinition } from '../types/pvp.js';
 import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
 import BorderGlow from './BorderGlow.js';
+import { handleAvatarImgError, resolveAvatarUrl } from '../utils/discordAvatar.js';
 
 interface UserAccountSidebarProps {
   user: UserProfile | null;
@@ -76,8 +77,9 @@ export const UserAccountSidebar: React.FC<UserAccountSidebarProps> = ({
             <div className="flex items-center gap-3.5 pb-3.5 border-b border-slate-800/80">
               <div className="relative group flex-shrink-0">
                 <img
-                  src={user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                  src={resolveAvatarUrl(user.avatar, user.discordId)}
                   alt={user.username}
+                  onError={(e) => handleAvatarImgError(e, user.discordId)}
                   className="w-13 h-13 rounded-2xl border-2 border-cyan-400/70 object-cover shadow-[0_0_15px_rgba(0,229,255,0.3)] bg-slate-950"
                 />
                 <span
