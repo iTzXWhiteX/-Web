@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { PublicLeaderboardItem, TierDefinition, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
 import { ScrollReveal } from '../components/ScrollReveal.js';
+import BorderGlow from '../components/BorderGlow.js';
 
 interface LeaderboardPageProps {
   leaderboard: PublicLeaderboardItem[];
@@ -98,78 +99,105 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
             
             {/* Rank 2 (Silver) */}
             {top2 && (
-              <div
-                onClick={() => setSelectedPlayer(top2)}
-                className="order-2 sm:order-1 glass-card rounded-3xl p-5 border-slate-400/30 text-center space-y-3 cursor-pointer hover:border-slate-300 transition-all hover:scale-[1.02]"
-              >
-                <div className="relative inline-block mx-auto">
-                  <img
-                    src={top2.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                    alt={top2.discordDisplayName}
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-300 shadow-md mx-auto"
-                  />
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-300 text-black font-bold text-xs flex items-center justify-center font-mono">
-                    2
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-heading font-bold text-white text-base truncate">{top2.minecraftName}</h4>
-                  <p className="text-xs text-slate-400 truncate">{top2.discordDisplayName}</p>
-                </div>
-                <div className="inline-flex px-3 py-1 rounded-xl text-xs font-mono font-bold text-white bg-slate-800 border border-slate-700">
-                  {top2.tierName}
-                </div>
+              <div onClick={() => setSelectedPlayer(top2)} className="order-2 sm:order-1 cursor-pointer">
+                <BorderGlow
+                  borderRadius={24}
+                  edgeSensitivity={30}
+                  glowRadius={30}
+                  glowIntensity={0.9}
+                  colors={['#94a3b8', '#cbd5e1', '#ffffff']}
+                  backgroundColor="#0b1120"
+                  className="w-full transition-transform hover:scale-[1.02]"
+                >
+                  <div className="p-5 text-center space-y-3">
+                    <div className="relative inline-block mx-auto">
+                      <img
+                        src={top2.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                        alt={top2.discordDisplayName}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-300 shadow-md mx-auto"
+                      />
+                      <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-300 text-black font-bold text-xs flex items-center justify-center font-mono">
+                        2
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-heading font-bold text-white text-base truncate">{top2.minecraftName}</h4>
+                      <p className="text-xs text-slate-400 truncate">{top2.discordDisplayName}</p>
+                    </div>
+                    <div className="inline-flex px-3 py-1 rounded-xl text-xs font-mono font-bold text-white bg-slate-800 border border-slate-700">
+                      {top2.tierName}
+                    </div>
+                  </div>
+                </BorderGlow>
               </div>
             )}
 
             {/* Rank 1 (Gold) */}
-            <div
-              onClick={() => setSelectedPlayer(top1)}
-              className="order-1 sm:order-2 glass-panel rounded-3xl p-6 border-amber-400/40 text-center space-y-3.5 cursor-pointer hover:border-amber-400 transition-all hover:scale-[1.03] shadow-[0_0_30px_rgba(245,158,11,0.15)] bg-gradient-to-b from-amber-500/10 to-slate-900/80"
-            >
-              <div className="relative inline-block mx-auto">
-                <Crown className="w-6 h-6 text-amber-400 mx-auto mb-1 animate-bounce" />
-                <img
-                  src={top1.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                  alt={top1.discordDisplayName}
-                  className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-lg mx-auto"
-                />
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-400 text-black font-black text-xs shadow-md">
-                  #1 الأول
-                </span>
-              </div>
-              <div>
-                <h3 className="font-heading font-extrabold text-white text-lg truncate">{top1.minecraftName}</h3>
-                <p className="text-xs text-amber-300/90 font-medium truncate">{top1.discordDisplayName}</p>
-              </div>
-              <div className="inline-flex px-3.5 py-1 rounded-xl text-xs font-mono font-black text-black bg-gradient-to-r from-amber-400 to-yellow-300 shadow-md">
-                {top1.tierName}
-              </div>
+            <div onClick={() => setSelectedPlayer(top1)} className="order-1 sm:order-2 cursor-pointer">
+              <BorderGlow
+                borderRadius={24}
+                edgeSensitivity={30}
+                glowRadius={35}
+                glowIntensity={1.3}
+                colors={['#f59e0b', '#fbbf24', '#ffffff']}
+                backgroundColor="#15130b"
+                className="w-full transition-transform hover:scale-[1.03] shadow-[0_0_30px_rgba(245,158,11,0.15)]"
+              >
+                <div className="p-6 text-center space-y-3.5 bg-gradient-to-b from-amber-500/10 to-transparent">
+                  <div className="relative inline-block mx-auto">
+                    <Crown className="w-6 h-6 text-amber-400 mx-auto mb-1 animate-bounce" />
+                    <img
+                      src={top1.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                      alt={top1.discordDisplayName}
+                      className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-lg mx-auto"
+                    />
+                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-400 text-black font-black text-xs shadow-md">
+                      #1 الأول
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-extrabold text-white text-lg truncate">{top1.minecraftName}</h3>
+                    <p className="text-xs text-amber-300/90 font-medium truncate">{top1.discordDisplayName}</p>
+                  </div>
+                  <div className="inline-flex px-3.5 py-1 rounded-xl text-xs font-mono font-black text-black bg-gradient-to-r from-amber-400 to-yellow-300 shadow-md">
+                    {top1.tierName}
+                  </div>
+                </div>
+              </BorderGlow>
             </div>
 
             {/* Rank 3 (Bronze) */}
             {top3 && (
-              <div
-                onClick={() => setSelectedPlayer(top3)}
-                className="order-3 glass-card rounded-3xl p-5 border-amber-700/30 text-center space-y-3 cursor-pointer hover:border-amber-600 transition-all hover:scale-[1.02]"
-              >
-                <div className="relative inline-block mx-auto">
-                  <img
-                    src={top3.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
-                    alt={top3.discordDisplayName}
-                    className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-700 shadow-md mx-auto"
-                  />
-                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-700 text-white font-bold text-xs flex items-center justify-center font-mono">
-                    3
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-heading font-bold text-white text-base truncate">{top3.minecraftName}</h4>
-                  <p className="text-xs text-slate-400 truncate">{top3.discordDisplayName}</p>
-                </div>
-                <div className="inline-flex px-3 py-1 rounded-xl text-xs font-mono font-bold text-white bg-slate-800 border border-slate-700">
-                  {top3.tierName}
-                </div>
+              <div onClick={() => setSelectedPlayer(top3)} className="order-3 cursor-pointer">
+                <BorderGlow
+                  borderRadius={24}
+                  edgeSensitivity={30}
+                  glowRadius={30}
+                  glowIntensity={0.9}
+                  colors={['#b45309', '#d97706', '#ffffff']}
+                  backgroundColor="#140f09"
+                  className="w-full transition-transform hover:scale-[1.02]"
+                >
+                  <div className="p-5 text-center space-y-3">
+                    <div className="relative inline-block mx-auto">
+                      <img
+                        src={top3.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
+                        alt={top3.discordDisplayName}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-700 shadow-md mx-auto"
+                      />
+                      <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-700 text-white font-bold text-xs flex items-center justify-center font-mono">
+                        3
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-heading font-bold text-white text-base truncate">{top3.minecraftName}</h4>
+                      <p className="text-xs text-slate-400 truncate">{top3.discordDisplayName}</p>
+                    </div>
+                    <div className="inline-flex px-3 py-1 rounded-xl text-xs font-mono font-bold text-white bg-slate-800 border border-slate-700">
+                      {top3.tierName}
+                    </div>
+                  </div>
+                </BorderGlow>
               </div>
             )}
 

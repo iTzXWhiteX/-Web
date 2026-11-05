@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ExternalLink, Check, Copy, AlertCircle, LogIn, ShieldCheck, Sparkles, Info } from 'lucide-react';
 import { UserProfile } from '../types/pvp.js';
+import BorderGlow from './BorderGlow.js';
 
 interface DiscordAuthModalProps {
   isOpen: boolean;
@@ -104,10 +105,24 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({
     <div
       dir="rtl"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={onClose}
     >
-      <div className="relative w-full max-w-lg glow-window rounded-3xl p-6 md:p-8 shadow-[0_0_60px_rgba(0,229,255,0.25)] text-right overflow-hidden">
-        {/* Ambient Top Glow Line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+      <div
+        className="w-full max-w-lg my-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <BorderGlow
+          borderRadius={28}
+          edgeSensitivity={30}
+          glowRadius={40}
+          glowIntensity={1.2}
+          backgroundColor="#080e1e"
+          colors={['#2563eb', '#00e5ff', '#ffffff']}
+          className="w-full shadow-[0_0_60px_rgba(0,229,255,0.25)]"
+        >
+          <div className="relative p-6 md:p-8 text-right overflow-hidden">
+            {/* Ambient Top Glow Line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
 
         {/* Close Button */}
         <button
@@ -226,6 +241,8 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({
             </div>
           </div>
         </div>
+          </div>
+        </BorderGlow>
       </div>
     </div>
   );

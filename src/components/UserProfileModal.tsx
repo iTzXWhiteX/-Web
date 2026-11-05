@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ServerRole, TierDefinition } from '../types/pvp.js';
 import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
+import BorderGlow from './BorderGlow.js';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -55,10 +56,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[calc(100vw-1.25rem)] sm:max-w-xl max-h-[92vh] flex flex-col glow-window rounded-3xl shadow-[0_0_50px_rgba(0,229,255,0.25)] overflow-hidden animate-in zoom-in-95 duration-200 my-auto"
+        className="w-full max-w-[calc(100vw-1.25rem)] sm:max-w-xl max-h-[92vh] flex flex-col my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Banner - Fixed at top */}
+        <BorderGlow
+          borderRadius={28}
+          edgeSensitivity={30}
+          glowRadius={40}
+          glowIntensity={1.2}
+          backgroundColor="#080e1e"
+          colors={['#2563eb', '#00e5ff', '#ffffff']}
+          className="w-full max-h-[92vh] flex flex-col shadow-[0_0_50px_rgba(0,229,255,0.25)] animate-in zoom-in-95 duration-200"
+        >
+          {/* Header Banner - Fixed at top */}
         <div className="flex-shrink-0 relative h-28 sm:h-32 bg-gradient-to-r from-blue-950 via-slate-900 to-cyan-950 border-b border-cyan-500/20 flex items-end px-6 pb-3">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/15 via-transparent to-transparent pointer-events-none" />
           
@@ -253,6 +263,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           </div>
         </div>
+        </BorderGlow>
       </div>
     </div>
   );

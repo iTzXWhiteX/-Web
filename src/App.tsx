@@ -8,7 +8,7 @@ import { Shield } from 'lucide-react';
 import { Navbar } from './components/Navbar.js';
 import { Footer } from './components/Footer.js';
 import { DiscordAuthModal } from './components/DiscordAuthModal.js';
-import { AmbientBackgroundLogo } from './components/WhiteKingdomLogo.js';
+import { SiteBackground } from './components/SiteBackground.js';
 import { HomePage } from './pages/HomePage.js';
 import { ServerPage } from './pages/ServerPage.js';
 import { AboutPage } from './pages/AboutPage.js';
@@ -180,8 +180,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#060913] text-slate-100 relative selection:bg-cyan-500 selection:text-black">
-      {/* Uploaded Server Logo Ambient Background Atmosphere */}
-      <AmbientBackgroundLogo logoUrl={settings.logoUrl} />
+      {/* High-Performance Modern Site Background */}
+      <SiteBackground />
 
       {/* Main Navbar */}
       <Navbar

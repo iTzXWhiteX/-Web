@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Trophy, Server, ShieldAlert, Award, UserCheck, Shield } from 'lucide-react';
 import { TestServer, TierDefinition, TierTester, WHITE_KINGDOM_TIERS } from '../types/pvp.js';
 import { ScrollReveal } from '../components/ScrollReveal.js';
+import BorderGlow from '../components/BorderGlow.js';
 
 interface TierTestPageProps {
   content: string;
@@ -39,9 +40,18 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
 
       {/* Main Tier Test Information Card */}
       <ScrollReveal delayMs={60}>
-        <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-cyan-500/25 shadow-[0_0_40px_rgba(0,229,255,0.08)] space-y-8 relative overflow-hidden">
-          {/* Subtle top ambient glow line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
+        <BorderGlow
+          borderRadius={24}
+          edgeSensitivity={30}
+          glowRadius={40}
+          glowIntensity={1.0}
+          backgroundColor="#080e1e"
+          colors={['#2563eb', '#00e5ff', '#ffffff']}
+          className="w-full shadow-[0_0_40px_rgba(0,229,255,0.08)]"
+        >
+          <div className="p-6 sm:p-10 space-y-8 relative overflow-hidden backdrop-blur-2xl">
+            {/* Subtle top ambient glow line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
           {/* Header */}
           <div className="border-b border-slate-800/80 pb-6 space-y-2 text-right">
@@ -138,14 +148,24 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </BorderGlow>
       </ScrollReveal>
 
       {/* Official Tier Testers Section */}
       <ScrollReveal delayMs={100}>
-        <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-cyan-500/25 shadow-[0_0_40px_rgba(0,229,255,0.08)] space-y-6 relative overflow-hidden">
-          {/* Subtle Top Accent */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+        <BorderGlow
+          borderRadius={24}
+          edgeSensitivity={30}
+          glowRadius={40}
+          glowIntensity={1.0}
+          backgroundColor="#080e1e"
+          colors={['#2563eb', '#00e5ff', '#ffffff']}
+          className="w-full shadow-[0_0_40px_rgba(0,229,255,0.08)]"
+        >
+          <div className="p-6 sm:p-10 space-y-6 relative overflow-hidden backdrop-blur-2xl">
+            {/* Subtle Top Accent */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 
           {/* Section Header */}
           <div className="border-b border-slate-800/80 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-right">
@@ -225,7 +245,8 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
               ))}
             </div>
           )}
-        </div>
+          </div>
+        </BorderGlow>
       </ScrollReveal>
 
       {/* CTA: View Leaderboard */}

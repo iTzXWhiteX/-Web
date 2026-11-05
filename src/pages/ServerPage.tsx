@@ -15,6 +15,7 @@ import { WhiteKingdomLogo } from '../components/WhiteKingdomLogo.js';
 import { DiscordFormattedText } from '../utils/discordMentionParser.js';
 import { RoleDetailsModal } from '../components/RoleDetailsModal.js';
 import { ScrollReveal } from '../components/ScrollReveal.js';
+import BorderGlow from '../components/BorderGlow.js';
 
 interface ServerPageProps {
   serverName: string;
@@ -69,34 +70,44 @@ export const ServerPage: React.FC<ServerPageProps> = ({
       <ScrollReveal delayMs={50}>
         <section aria-label="معلومات السيرفر" className="space-y-6">
           {/* Main Server Information Card */}
-          <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-cyan-500/25 shadow-2xl space-y-8 relative overflow-hidden">
-            {/* Subtle top ambient glow */}
-            <div className="absolute top-0 right-1/4 w-72 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+          <BorderGlow
+            borderRadius={24}
+            edgeSensitivity={30}
+            glowRadius={40}
+            glowIntensity={1.0}
+            backgroundColor="#080e1e"
+            colors={['#2563eb', '#00e5ff', '#ffffff']}
+            className="w-full shadow-2xl"
+          >
+            <div className="p-6 sm:p-10 space-y-8 relative overflow-hidden backdrop-blur-2xl">
+              {/* Subtle top ambient glow */}
+              <div className="absolute top-0 right-1/4 w-72 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Card Header */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 border-b border-slate-800/80 pb-7 text-center sm:text-right relative z-10">
-              <WhiteKingdomLogo size="lg" logoUrl={logoUrl} serverName={serverName} glow={false} />
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-center sm:justify-start gap-2 text-cyan-400 text-xs font-mono font-semibold uppercase tracking-wider">
-                  <Info className="w-4 h-4" />
-                  <span>نبذة عن المجتمع والتفاصيل الرسمية</span>
+              {/* Card Header */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 border-b border-slate-800/80 pb-7 text-center sm:text-right relative z-10">
+                <WhiteKingdomLogo size="lg" logoUrl={logoUrl} serverName={serverName} glow={false} />
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-cyan-400 text-xs font-mono font-semibold uppercase tracking-wider">
+                    <Info className="w-4 h-4" />
+                    <span>نبذة عن المجتمع والتفاصيل الرسمية</span>
+                  </div>
+                  <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-wide">
+                    سيرفر {serverName}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    المعلومات الرسمية والتعليمات المحددة مباشرة من قِبل إدارة السيرفر.
+                  </p>
                 </div>
-                <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-wide">
-                  سيرفر {serverName}
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                  المعلومات الرسمية والتعليمات المحددة مباشرة من قِبل إدارة السيرفر.
-                </p>
               </div>
-            </div>
 
-            {/* Admin Managed Content */}
-            <div className="prose prose-invert max-w-none text-right relative z-10">
-              <div className="text-sm sm:text-base text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
-                {aboutContent || 'لم تتم إضافة تفاصيل عن السيرفر حتى الآن من قِبل الإدارة.'}
+              {/* Admin Managed Content */}
+              <div className="prose prose-invert max-w-none text-right relative z-10">
+                <div className="text-sm sm:text-base text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
+                  {aboutContent || 'لم تتم إضافة تفاصيل عن السيرفر حتى الآن من قِبل الإدارة.'}
+                </div>
               </div>
             </div>
-          </div>
+          </BorderGlow>
         </section>
       </ScrollReveal>
 

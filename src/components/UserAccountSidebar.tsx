@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ServerRole, TierDefinition } from '../types/pvp.js';
 import { resolveUserRoles, getTierDefinition } from '../utils/pvpLogic.js';
+import BorderGlow from './BorderGlow.js';
 
 interface UserAccountSidebarProps {
   user: UserProfile | null;
@@ -54,9 +55,19 @@ export const UserAccountSidebar: React.FC<UserAccountSidebarProps> = ({
       dir="rtl"
       aria-label="منطقة حساب المستخدم"
     >
-      <div className="lg:sticky lg:top-24 glass-panel rounded-3xl border border-cyan-500/25 p-4 sm:p-5 shadow-[0_10px_35px_rgba(0,0,0,0.45)] backdrop-blur-2xl relative overflow-hidden transition-all">
-        {/* Ambient Top Glow */}
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-44 h-24 bg-gradient-to-b from-cyan-500/15 to-transparent blur-2xl pointer-events-none" />
+      <div className="lg:sticky lg:top-24">
+        <BorderGlow
+          borderRadius={24}
+          edgeSensitivity={30}
+          glowRadius={35}
+          glowIntensity={1.0}
+          backgroundColor="#080e1e"
+          colors={['#2563eb', '#00e5ff', '#ffffff']}
+          className="w-full shadow-[0_10px_35px_rgba(0,0,0,0.45)]"
+        >
+          <div className="p-4 sm:p-5 relative overflow-hidden backdrop-blur-2xl">
+            {/* Ambient Top Glow */}
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-44 h-24 bg-gradient-to-b from-cyan-500/15 to-transparent blur-2xl pointer-events-none" />
 
         {user ? (
           /* LOGGED IN USER VIEW */
@@ -231,6 +242,8 @@ export const UserAccountSidebar: React.FC<UserAccountSidebarProps> = ({
             </p>
           </div>
         )}
+          </div>
+        </BorderGlow>
       </div>
     </aside>
   );
