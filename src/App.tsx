@@ -247,10 +247,10 @@ export default function App() {
             </div>
           )
         ) : (
-          /* Gaming Community Dashboard Layout: Page Content (Center/Right) + Persistent User Account Panel (LEFT in RTL) */
-          <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-5 sm:py-7 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start" dir="rtl">
+          /* Gaming Community Dashboard Layout: Page Content (Center/Right) + User Account Panel on Home Page only (LEFT in RTL) */
+          <div className={`max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-5 sm:py-7 ${activePage === 'home' ? 'flex flex-col lg:flex-row gap-6 lg:gap-8 items-start' : 'w-full'}`} dir="rtl">
             {/* Center / Main Content View */}
-            <div className="flex-1 min-w-0 w-full order-1">
+            <div className={`w-full ${activePage === 'home' ? 'flex-1 min-w-0 order-1' : ''}`}>
               {activePage === 'home' && (
                 <HomePage
                   serverName={settings.serverName}
@@ -296,19 +296,21 @@ export default function App() {
               )}
             </div>
 
-            {/* Persistent User Account Sidebar Area on the LEFT (in RTL layout) */}
-            <div className="order-2 lg:order-2 w-full lg:w-auto">
-              <UserAccountSidebar
-                user={currentUser}
-                allRoles={roles}
-                allTiers={tiers}
-                onOpenProfile={() => setProfileModalOpen(true)}
-                onOpenLogin={() => setLoginModalOpen(true)}
-                onLogout={handleLogout}
-                onNavigateToAdmin={() => navigateTo('admin')}
-                onNavigateToTierTest={() => navigateTo('tier-test')}
-              />
-            </div>
+            {/* User Account Sidebar Area on the LEFT (in RTL layout) - Displayed ONLY on the Home Page */}
+            {activePage === 'home' && (
+              <div className="order-2 lg:order-2 w-full lg:w-auto">
+                <UserAccountSidebar
+                  user={currentUser}
+                  allRoles={roles}
+                  allTiers={tiers}
+                  onOpenProfile={() => setProfileModalOpen(true)}
+                  onOpenLogin={() => setLoginModalOpen(true)}
+                  onLogout={handleLogout}
+                  onNavigateToAdmin={() => navigateTo('admin')}
+                  onNavigateToTierTest={() => navigateTo('tier-test')}
+                />
+              </div>
+            )}
           </div>
         )}
       </main>
