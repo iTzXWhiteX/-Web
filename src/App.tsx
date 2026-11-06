@@ -100,28 +100,35 @@ export default function App() {
     fetchPublicData();
   }, [fetchSession, fetchPublicData]);
 
-  // Handle Hash routing for clean, persistent navigation
+  // Handle both URL pathname and hash routing for clean navigation and SEO crawlers
   useEffect(() => {
-    const handleHashChange = () => {
+    const syncRouteFromLocation = () => {
       const hash = window.location.hash.replace('#', '').trim().toLowerCase();
-      if (!hash || hash === 'home') {
+      const pathSegment = window.location.pathname.replace(/^\/+/, '').split('/')[0]?.toLowerCase();
+      const route = hash || pathSegment;
+
+      if (!route || route === 'home') {
         setActivePage('home');
-      } else if (hash === 'server' || hash === 'about' || hash === 'news') {
+      } else if (route === 'server' || route === 'about' || route === 'news') {
         setActivePage('server');
-      } else if (hash === 'tier-test' || hash === 'tiertest' || hash === 'tiers') {
+      } else if (route === 'tier-test' || route === 'tiertest' || route === 'tiers') {
         setActivePage('tier-test');
-      } else if (hash === 'leaderboard') {
+      } else if (route === 'leaderboard') {
         setActivePage('leaderboard');
-      } else if (hash === 'admin') {
+      } else if (route === 'admin') {
         setActivePage('admin');
       } else {
         setActivePage('home');
       }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('hashchange', syncRouteFromLocation);
+    window.addEventListener('popstate', syncRouteFromLocation);
+    syncRouteFromLocation();
+    return () => {
+      window.removeEventListener('hashchange', syncRouteFromLocation);
+      window.removeEventListener('popstate', syncRouteFromLocation);
+    };
   }, []);
 
   const navigateTo = (page: string) => {

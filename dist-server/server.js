@@ -4,6 +4,7 @@ import express2 from "express";
 import cookieParser from "cookie-parser";
 import path2 from "path";
 import fs2 from "fs";
+import { fileURLToPath as fileURLToPath2 } from "url";
 
 // server/api.ts
 import express from "express";
@@ -1227,6 +1228,15 @@ function getSessionUser(req) {
   user.isAdmin = db.isAdmin(discordId);
   return user;
 }
+function requireAuth(req, res, next) {
+  const user = getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "Authentication required. Please log in with Discord." });
+    return;
+  }
+  req.user = user;
+  next();
+}
 function requireAdmin(req, res, next) {
   const user = getSessionUser(req);
   if (!user) {
@@ -1714,6 +1724,21 @@ apiRouter.get("/user/my-profile", (req, res) => {
     profile: user,
     roles: resolvedRoles,
     tierDefinition: tierDef
+  });
+});
+apiRouter.post("/user/minecraft-name", requireAuth, async (req, res) => {
+  const user = req.user || getSessionUser(req);
+  if (!user) {
+    res.status(401).json({ error: "\u063A\u064A\u0631 \u0645\u0635\u0631\u062D. \u064A\u0631\u062C\u0649 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644." });
+    return;
+  }
+  const { minecraftName } = req.body;
+  const cleanName = typeof minecraftName === "string" ? minecraftName.trim() : "";
+  const updated = await db.updateUserMinecraftName(user.discordId, cleanName);
+  res.json({
+    success: true,
+    user: updated || user,
+    message: cleanName ? "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u062D\u0633\u0627\u0628 \u0645\u0627\u064A\u0646 \u0643\u0631\u0627\u0641\u062A \u0628\u0646\u062C\u0627\u062D." : "\u062A\u0645\u062A \u0625\u0632\u0627\u0644\u0629 \u0631\u0628\u0637 \u062D\u0633\u0627\u0628 \u0645\u0627\u064A\u0646 \u0643\u0631\u0627\u0641\u062A."
   });
 });
 apiRouter.get("/admin/data", requireAdmin, (req, res) => {
@@ -2391,10 +2416,147 @@ apiRouter.patch("/admin/users/:discordId/minecraft-name", requireAdmin, async (r
 });
 
 // server/serverApp.ts
+var __filename2 = fileURLToPath2(import.meta.url);
+var __dirname2 = path2.dirname(__filename2);
+var SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- \u0627\u0644\u0635\u0641\u062D\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 | Home Page -->
+  <url>
+    <loc>https://white-kingdom-community.ethiodeploy.app/</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- \u0627\u0644\u0633\u064A\u0631\u0641\u0631 \u0648\u0627\u0644\u0645\u062C\u062A\u0645\u0639 | Server & Community -->
+  <url>
+    <loc>https://white-kingdom-community.ethiodeploy.app/server</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- \u0627\u062E\u062A\u0628\u0627\u0631 \u0627\u0644\u0645\u0633\u062A\u0648\u064A\u0627\u062A | Tier Test System -->
+  <url>
+    <loc>https://white-kingdom-community.ethiodeploy.app/tier-test</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0645\u062A\u0635\u062F\u0631\u064A\u0646 | Tier Rankings & Leaderboard -->
+  <url>
+    <loc>https://white-kingdom-community.ethiodeploy.app/leaderboard</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- \u0639\u0646 \u0627\u0644\u0645\u062C\u062A\u0645\u0639 | About White Kingdom -->
+  <url>
+    <loc>https://white-kingdom-community.ethiodeploy.app/about</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- \u0627\u0644\u0623\u062E\u0628\u0627\u0631 \u0648\u0627\u0644\u062A\u062D\u062F\u064A\u062B\u0627\u062A | Community News & Updates -->
+  <url>
+    <loc>https://white-kingdom-community.ethiodeploy.app/news</loc>
+    <lastmod>2026-11-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>`;
+var ROBOTS_TXT = `# Robots.txt for White Kingdom Community
+# https://white-kingdom-community.ethiodeploy.app/
+
+User-agent: *
+Allow: /
+Allow: /server
+Allow: /tier-test
+Allow: /leaderboard
+Allow: /about
+Allow: /news
+
+# Disallow private and administrative endpoints
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+
+# Sitemap location
+Sitemap: https://white-kingdom-community.ethiodeploy.app/sitemap.xml
+`;
+function getSitemapXml(distPath, publicDir) {
+  const possiblePaths = [
+    path2.resolve(distPath, "sitemap.xml"),
+    path2.resolve(publicDir, "sitemap.xml"),
+    path2.resolve(__dirname2, "..", "dist", "sitemap.xml"),
+    path2.resolve(__dirname2, "..", "public", "sitemap.xml"),
+    path2.resolve(__dirname2, "dist", "sitemap.xml"),
+    path2.resolve(__dirname2, "public", "sitemap.xml"),
+    path2.resolve(process.cwd(), "sitemap.xml")
+  ];
+  for (const p of possiblePaths) {
+    if (fs2.existsSync(p)) {
+      try {
+        const content = fs2.readFileSync(p, "utf-8");
+        if (content && content.includes("<urlset")) {
+          return content;
+        }
+      } catch {
+      }
+    }
+  }
+  return SITEMAP_XML.trim();
+}
+function getRobotsTxt(distPath, publicDir) {
+  const possiblePaths = [
+    path2.resolve(distPath, "robots.txt"),
+    path2.resolve(publicDir, "robots.txt"),
+    path2.resolve(__dirname2, "..", "dist", "robots.txt"),
+    path2.resolve(__dirname2, "..", "public", "robots.txt"),
+    path2.resolve(__dirname2, "dist", "robots.txt"),
+    path2.resolve(__dirname2, "public", "robots.txt"),
+    path2.resolve(process.cwd(), "robots.txt")
+  ];
+  for (const p of possiblePaths) {
+    if (fs2.existsSync(p)) {
+      try {
+        const content = fs2.readFileSync(p, "utf-8");
+        if (content && content.includes("Sitemap:")) {
+          return content;
+        }
+      } catch {
+      }
+    }
+  }
+  return ROBOTS_TXT.trim();
+}
 async function startServer() {
   await db.init();
   const app = express2();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
+  const distPath = path2.resolve(process.cwd(), "dist");
+  const publicDir = path2.resolve(process.cwd(), "public");
+  const isProduction = process.env.NODE_ENV === "production";
+  app.get(["/sitemap.xml", "/sitemap.xml/"], (_req, res) => {
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    return res.status(200).send(getSitemapXml(distPath, publicDir));
+  });
+  app.get(["/robots.txt", "/robots.txt/"], (_req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    return res.status(200).send(getRobotsTxt(distPath, publicDir));
+  });
   app.use(express2.json({ limit: "25mb" }));
   app.use(express2.urlencoded({ extended: true, limit: "25mb" }));
   app.use(cookieParser());
@@ -2407,21 +2569,65 @@ async function startServer() {
     ["/auth/callback", "/auth/callback/", "/api/auth/callback", "/api/auth/callback/"],
     handleDiscordCallback
   );
+  if (fs2.existsSync(publicDir)) {
+    app.use(express2.static(publicDir));
+  }
   app.use("/api", apiRouter);
-  const distPath = path2.resolve(process.cwd(), "dist");
-  const hasDist = fs2.existsSync(distPath);
-  if (process.env.NODE_ENV === "production" || hasDist) {
+  if (isProduction && fs2.existsSync(distPath)) {
     app.use(express2.static(distPath));
-    app.get("*", (_req, res) => {
+    app.get("*", (req, res, next) => {
+      const cleanPath = req.path.toLowerCase().replace(/\/+$/, "");
+      if (cleanPath === "/sitemap.xml") {
+        res.setHeader("Content-Type", "application/xml; charset=utf-8");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        return res.status(200).send(getSitemapXml(distPath, publicDir));
+      }
+      if (cleanPath === "/robots.txt") {
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        return res.status(200).send(getRobotsTxt(distPath, publicDir));
+      }
+      if (req.path.startsWith("/api") || req.path.startsWith("/auth")) {
+        return next();
+      }
       res.sendFile(path2.resolve(distPath, "index.html"));
     });
   } else {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false },
       appType: "spa"
     });
     app.use(vite.middlewares);
+    app.use("*", async (req, res, next) => {
+      const cleanUrl = req.originalUrl.split("?")[0].toLowerCase().replace(/\/+$/, "");
+      if (cleanUrl === "/sitemap.xml") {
+        res.setHeader("Content-Type", "application/xml; charset=utf-8");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        return res.status(200).send(getSitemapXml(distPath, publicDir));
+      }
+      if (cleanUrl === "/robots.txt") {
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        return res.status(200).send(getRobotsTxt(distPath, publicDir));
+      }
+      const url = req.originalUrl;
+      try {
+        const indexPath = path2.resolve(process.cwd(), "index.html");
+        if (!fs2.existsSync(indexPath)) {
+          res.status(404).send("index.html not found");
+          return;
+        }
+        let template = fs2.readFileSync(indexPath, "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        if (vite?.ssrFixStacktrace) {
+          vite.ssrFixStacktrace(e);
+        }
+        next(e);
+      }
+    });
   }
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`White Kingdom PvP Server running on http://0.0.0.0:${PORT}`);

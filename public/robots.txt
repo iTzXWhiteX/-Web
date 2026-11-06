@@ -1,0 +1,18 @@
+# Robots.txt for White Kingdom Community
+# https://white-kingdom-community.ethiodeploy.app/
+
+User-agent: *
+Allow: /
+Allow: /server
+Allow: /tier-test
+Allow: /leaderboard
+Allow: /about
+Allow: /news
+
+# Disallow private and administrative endpoints
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/
+
+# Sitemap location
+Sitemap: https://white-kingdom-community.ethiodeploy.app/sitemap.xml
