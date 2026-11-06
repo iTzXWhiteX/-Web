@@ -79,7 +79,7 @@ export const ServerPage: React.FC<ServerPageProps> = ({
             colors={['#2563eb', '#00e5ff', '#ffffff']}
             className="w-full shadow-2xl"
           >
-            <div className="p-6 sm:p-10 space-y-8 relative overflow-hidden backdrop-blur-2xl">
+            <div className="p-6 sm:p-10 space-y-8 relative overflow-hidden backdrop-blur-2xl rounded-[inherit] border-0">
               {/* Subtle top ambient glow */}
               <div className="absolute top-0 right-1/4 w-72 h-32 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 

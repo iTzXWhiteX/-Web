@@ -66,7 +66,7 @@ export const UserAccountSidebar: React.FC<UserAccountSidebarProps> = ({
           colors={['#2563eb', '#00e5ff', '#ffffff']}
           className="w-full shadow-[0_10px_35px_rgba(0,0,0,0.45)]"
         >
-          <div className="p-4 sm:p-5 relative overflow-hidden backdrop-blur-2xl">
+          <div className="p-4 sm:p-5 relative overflow-hidden backdrop-blur-2xl rounded-[inherit] border-0">
             {/* Ambient Top Glow */}
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-44 h-24 bg-gradient-to-b from-cyan-500/15 to-transparent blur-2xl pointer-events-none" />
 

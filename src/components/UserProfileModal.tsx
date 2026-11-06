@@ -140,7 +140,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       aria-label="تفاصيل حساب المستخدم"
     >
       <div
-        className="w-full max-w-[calc(100vw-1.25rem)] sm:max-w-xl max-h-[90vh] flex flex-col my-auto overflow-hidden"
+        className="w-full max-w-[calc(100vw-1.25rem)] sm:max-w-xl max-h-[90vh] flex flex-col my-auto overflow-hidden rounded-[28px]"
         onClick={(e) => e.stopPropagation()}
       >
         <BorderGlow
@@ -153,7 +153,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           className="w-full max-h-[90vh] shadow-[0_0_50px_rgba(0,229,255,0.25)] animate-in zoom-in-95 duration-200 overflow-hidden"
         >
           {/* Clean Top Bar - Fixed at top with title, badges, and close button */}
-          <div className="flex-shrink-0 relative px-5 sm:px-6 py-4 bg-gradient-to-r from-blue-950/90 via-slate-900 to-cyan-950/90 border-b border-cyan-500/20 flex items-center justify-between">
+          <div className="flex-shrink-0 relative px-5 sm:px-6 py-4 bg-gradient-to-r from-blue-950/90 via-slate-900 to-cyan-950/90 border-b border-cyan-500/20 flex items-center justify-between rounded-t-[inherit]">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
                 <User className="w-4 h-4" />

@@ -110,7 +110,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                   backgroundColor="#0b1120"
                   className="w-full transition-transform hover:scale-[1.02]"
                 >
-                  <div className="p-5 text-center space-y-3">
+                  <div className="p-5 text-center space-y-3 rounded-[inherit] border-0">
                     <div className="relative inline-block mx-auto">
                       <Crown className="w-6 h-6 text-slate-300 mx-auto mb-1 drop-shadow-[0_0_8px_rgba(203,213,225,0.45)]" />
                       <img
@@ -166,7 +166,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                 backgroundColor="#15130b"
                 className="w-full transition-transform hover:scale-[1.03] shadow-[0_0_30px_rgba(245,158,11,0.15)]"
               >
-                <div className="p-6 text-center space-y-3.5 bg-gradient-to-b from-amber-500/10 to-transparent">
+                <div className="p-6 text-center space-y-3.5 bg-gradient-to-b from-amber-500/10 to-transparent rounded-[inherit] border-0">
                   <div className="relative inline-block mx-auto">
                     <Crown className="w-6 h-6 text-amber-400 mx-auto mb-1 animate-bounce" />
                     <img
@@ -202,7 +202,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                   backgroundColor="#140f09"
                   className="w-full transition-transform hover:scale-[1.02]"
                 >
-                  <div className="p-5 text-center space-y-3">
+                  <div className="p-5 text-center space-y-3 rounded-[inherit] border-0">
                     <div className="relative inline-block mx-auto">
                       <Crown className="w-6 h-6 text-[#cd7f32] mx-auto mb-1 drop-shadow-[0_0_8px_rgba(205,127,50,0.5)]" />
                       <img

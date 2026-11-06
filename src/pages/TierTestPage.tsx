@@ -49,7 +49,7 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
           colors={['#2563eb', '#00e5ff', '#ffffff']}
           className="w-full shadow-[0_0_40px_rgba(0,229,255,0.08)]"
         >
-          <div className="p-6 sm:p-10 space-y-8 relative overflow-hidden backdrop-blur-2xl">
+          <div className="p-6 sm:p-10 space-y-8 relative overflow-hidden backdrop-blur-2xl rounded-[inherit] border-0">
             {/* Subtle top ambient glow line */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
@@ -163,7 +163,7 @@ export const TierTestPage: React.FC<TierTestPageProps> = ({
           colors={['#2563eb', '#00e5ff', '#ffffff']}
           className="w-full shadow-[0_0_40px_rgba(0,229,255,0.08)]"
         >
-          <div className="p-6 sm:p-10 space-y-6 relative overflow-hidden backdrop-blur-2xl">
+          <div className="p-6 sm:p-10 space-y-6 relative overflow-hidden backdrop-blur-2xl rounded-[inherit] border-0">
             {/* Subtle Top Accent */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
 

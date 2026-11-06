@@ -91,7 +91,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   colors={['#2563eb', '#00e5ff', '#ffffff']}
                   backgroundColor="#0a101f"
                 >
-                  <div className="inline-flex items-center gap-3 px-4 py-2 transition-colors">
+                  <div className="inline-flex items-center gap-3 px-4 py-2 transition-colors rounded-[inherit] border-0">
                     {ownerAvatar ? (
                       <img
                         src={ownerAvatar}
@@ -129,13 +129,13 @@ export const HomePage: React.FC<HomePageProps> = ({
               return (
                 <div className="col-span-1 sm:col-span-2 w-full">
                   <BorderGlow
-                    borderRadius={16}
+                    borderRadius={18}
                     edgeSensitivity={35}
                     glowRadius={40}
                     glowIntensity={1.2}
-                    colors={['#2563eb', '#00e5ff', '#ffffff']}
-                    backgroundColor="transparent"
-                    className="w-full"
+                    colors={['#5865F2', '#00e5ff', '#ffffff']}
+                    backgroundColor="#5865F2"
+                    className="w-full shadow-[0_4px_25px_rgba(88,101,242,0.4)]"
                   >
                     <a
                       href={finalDiscordUrl}
@@ -149,7 +149,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                           window.location.assign(finalDiscordUrl);
                         }
                       }}
-                      className="btn-join-server w-full py-3.5 px-6 rounded-2xl font-heading font-bold text-sm sm:text-base flex items-center justify-between group cursor-pointer whitespace-nowrap select-none"
+                      className="w-full py-3.5 px-6 rounded-[inherit] font-heading font-bold text-sm sm:text-base flex items-center justify-between group cursor-pointer whitespace-nowrap select-none text-white bg-gradient-to-r from-[#5865F2] via-[#4752C4] to-[#353ca8] border-0 shadow-none transition-all"
                       title="انضم إلى سيرفر ديسكورد الرسمي"
                     >
                       <div className="flex items-center gap-3 relative z-10 pointer-events-none">
@@ -169,7 +169,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             {/* Server Page (Unified About + News) */}
             <BorderGlow
-              borderRadius={16}
+              borderRadius={18}
               edgeSensitivity={25}
               glowRadius={30}
               colors={['#2563eb', '#00e5ff', '#ffffff']}
@@ -178,7 +178,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             >
               <button
                 onClick={() => onNavigate('server')}
-                className="w-full py-3 px-5 rounded-2xl text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors"
+                className="w-full py-3.5 px-5 rounded-[inherit] text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors border-0 shadow-none bg-transparent"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-cyan-500/15 text-cyan-400 group-hover:bg-cyan-500/25 transition-colors">
@@ -192,7 +192,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             {/* Tier Test Page */}
             <BorderGlow
-              borderRadius={16}
+              borderRadius={18}
               edgeSensitivity={25}
               glowRadius={30}
               colors={['#2563eb', '#00e5ff', '#ffffff']}
@@ -201,7 +201,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             >
               <button
                 onClick={() => onNavigate('tier-test')}
-                className="w-full py-3 px-5 rounded-2xl text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors"
+                className="w-full py-3.5 px-5 rounded-[inherit] text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors border-0 shadow-none bg-transparent"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-sky-500/15 text-sky-400 group-hover:bg-sky-500/25 transition-colors">
@@ -215,7 +215,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             {/* Leaderboard Page */}
             <BorderGlow
-              borderRadius={16}
+              borderRadius={18}
               edgeSensitivity={25}
               glowRadius={30}
               colors={['#2563eb', '#00e5ff', '#ffffff']}
@@ -224,7 +224,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             >
               <button
                 onClick={() => onNavigate('leaderboard')}
-                className="w-full py-3 px-5 rounded-2xl text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors"
+                className="w-full py-3.5 px-5 rounded-[inherit] text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors border-0 shadow-none bg-transparent"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 group-hover:bg-amber-500/25 transition-colors">
@@ -238,7 +238,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             {/* YouTube Channel Button */}
             <BorderGlow
-              borderRadius={16}
+              borderRadius={18}
               edgeSensitivity={25}
               glowRadius={30}
               colors={['#2563eb', '#00e5ff', '#ffffff']}
@@ -247,7 +247,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             >
               <button
                 onClick={handleOpenYouTube}
-                className="w-full py-3 px-5 rounded-2xl text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors"
+                className="w-full py-3.5 px-5 rounded-[inherit] text-white font-heading font-bold text-sm flex items-center justify-between group cursor-pointer text-right transition-colors border-0 shadow-none bg-transparent"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-xl bg-red-500/15 text-red-400 group-hover:bg-red-500/25 transition-colors">

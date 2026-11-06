@@ -156,7 +156,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({
       aria-label="تسجيل الدخول عبر ديسكورد"
     >
       <div
-        className="w-full max-w-lg max-h-[88vh] flex flex-col my-auto overflow-hidden rounded-3xl"
+        className="w-full max-w-lg max-h-[88vh] flex flex-col my-auto overflow-hidden rounded-[28px]"
         onClick={(e) => e.stopPropagation()}
       >
         <BorderGlow
@@ -169,7 +169,7 @@ export const DiscordAuthModal: React.FC<DiscordAuthModalProps> = ({
           className="w-full max-h-[88vh] shadow-[0_0_60px_rgba(0,229,255,0.25)] animate-in zoom-in-95 duration-200 overflow-hidden"
         >
           {/* Unified Modal Top Bar */}
-          <div className="flex-shrink-0 relative px-5 sm:px-6 py-4 bg-gradient-to-r from-blue-950/90 via-slate-900 to-cyan-950/90 border-b border-cyan-500/20 flex items-center justify-between">
+          <div className="flex-shrink-0 relative px-5 sm:px-6 py-4 bg-gradient-to-r from-blue-950/90 via-slate-900 to-cyan-950/90 border-b border-cyan-500/20 flex items-center justify-between rounded-t-[inherit]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5865F2]/40 to-cyan-500/20 border border-[#5865F2]/60 flex items-center justify-center text-[#5865F2] flex-shrink-0 shadow-[0_0_15px_rgba(88,101,242,0.4)]">
                 <LogIn className="w-5 h-5 text-white" />
