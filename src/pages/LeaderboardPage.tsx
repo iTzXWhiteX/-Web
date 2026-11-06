@@ -112,6 +112,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                 >
                   <div className="p-5 text-center space-y-3">
                     <div className="relative inline-block mx-auto">
+                      <Crown className="w-6 h-6 text-slate-300 mx-auto mb-1 drop-shadow-[0_0_8px_rgba(203,213,225,0.45)]" />
                       <img
                         src={top2.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                         alt={top2.discordDisplayName}
@@ -126,9 +127,29 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                       <h4 className="font-heading font-bold text-white text-base truncate">{top2.minecraftName}</h4>
                       <p className="text-xs text-slate-400 truncate">{top2.discordDisplayName}</p>
                     </div>
-                    <div className="inline-flex px-3 py-1 rounded-xl text-xs font-mono font-bold text-white bg-slate-800 border border-slate-700">
-                      {top2.tierName}
-                    </div>
+                    {(() => {
+                      const top2Tier = getTierInfo(top2.tierName);
+                      return (
+                        <div
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold border transition-all"
+                          style={{
+                            backgroundColor: `${top2Tier.color}25`,
+                            borderColor: `${top2Tier.color}80`,
+                            color: '#ffffff',
+                            boxShadow: `0 0 10px ${top2Tier.color}25`,
+                          }}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              backgroundColor: top2Tier.color,
+                              boxShadow: `0 0 6px ${top2Tier.color}`,
+                            }}
+                          />
+                          <span>{top2.tierName}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </BorderGlow>
               </div>
@@ -183,6 +204,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                 >
                   <div className="p-5 text-center space-y-3">
                     <div className="relative inline-block mx-auto">
+                      <Crown className="w-6 h-6 text-[#cd7f32] mx-auto mb-1 drop-shadow-[0_0_8px_rgba(205,127,50,0.5)]" />
                       <img
                         src={top3.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}
                         alt={top3.discordDisplayName}
@@ -197,9 +219,29 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({
                       <h4 className="font-heading font-bold text-white text-base truncate">{top3.minecraftName}</h4>
                       <p className="text-xs text-slate-400 truncate">{top3.discordDisplayName}</p>
                     </div>
-                    <div className="inline-flex px-3 py-1 rounded-xl text-xs font-mono font-bold text-white bg-slate-800 border border-slate-700">
-                      {top3.tierName}
-                    </div>
+                    {(() => {
+                      const top3Tier = getTierInfo(top3.tierName);
+                      return (
+                        <div
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold border transition-all"
+                          style={{
+                            backgroundColor: `${top3Tier.color}25`,
+                            borderColor: `${top3Tier.color}80`,
+                            color: '#ffffff',
+                            boxShadow: `0 0 10px ${top3Tier.color}25`,
+                          }}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              backgroundColor: top3Tier.color,
+                              boxShadow: `0 0 6px ${top3Tier.color}`,
+                            }}
+                          />
+                          <span>{top3.tierName}</span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </BorderGlow>
               </div>

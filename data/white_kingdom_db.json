@@ -10,10 +10,15 @@
       "email": "supercrafting64@gmail.com",
       "bio": "",
       "createdAt": "2026-11-01T18:43:15.967Z",
-      "lastLogin": "2026-11-04T10:10:30.018Z",
-      "loginCount": 6,
+      "lastLogin": "2026-11-06T16:28:01.832Z",
+      "loginCount": 5,
       "isAdmin": true,
-      "assignedRoles": [],
+      "assignedRoles": [
+        "role_1793557967512",
+        "role_1793558063565"
+      ],
+      "tier": "HT1",
+      "evaluatorName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ",
       "isPreCreated": false
     },
     "1483645685369933905": {
@@ -21,14 +26,15 @@
       "discordId": "1483645685369933905",
       "username": "upr_a",
       "globalName": "JOI",
-      "avatar": "https://cdn.discordapp.com/avatars/1483645685369933905/cbce020fddfd327d381f33c2e8308698.png?size=256",
+      "avatar": "https://cdn.discordapp.com/avatars/1483645685369933905/be6cb6ee85c492c6c4590b3f1d00cd44.png?size=256",
       "discriminator": "0",
       "email": "upra300@gmail.com",
       "bio": "",
       "createdAt": "2026-11-01T18:50:18.522Z",
-      "lastLogin": "2026-11-01T18:50:18.522Z",
-      "loginCount": 1,
-      "isAdmin": false,
+      "lastLogin": "2026-11-06T08:01:14.799Z",
+      "loginCount": 3,
+      "minecraftName": "Dream",
+      "isAdmin": true,
       "assignedRoles": [],
       "isPreCreated": false
     },
@@ -60,8 +66,8 @@
     "discordInviteUrl": "https://discord.gg/8c6cGpnQEp",
     "ownerDiscordId": "1324725244073873539",
     "ownerName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ",
-    "ownerAvatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
-    "ownerTag": "يسطا Owner",
+    "ownerAvatar": "https://cdn.discordapp.com/avatars/1324725244073873539/233a0daca4496bed79938152877b62f8.png?size=256",
+    "ownerTag": "صاحب السيرفر ومؤسس الموقع",
     "aboutContent": "أهلاً بكم في مجتمع 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎، سيرفر ديسكورد التنافسي المخصص لعشاق الpvp والمبارزات لي ماينكرافت\n\nتم تأسيس السيرفر لجمع اللاعبين المتميزين لخوض التحديات والمباريات الحماسية، ومشاركة الاستراتيجيات، واختبار المستويات التنافسية.\n\nانضم إلينا في سيرفر الديسكورد لتكون جزءاً من هذا المجتمع وشارك في البطولات والتحديات المستمرة!",
     "tierTestContent": "تنبيه هام وملاحظة توضيحية:\nهذا نظام اختبار وتحديد مستويات (Tier Test) مجتمعي شخصي تم إنشاؤه لاستخدامنا الخاص داخل مجتمع الألعاب وسيرفر ديسكورد 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎.\n\nهذا الاختبار ليس نظام تصنيف رسمي لأي سيرفر ماين كرافت، ولا يرتبط بأي سيرفر أو جهة أو منصة تصنيف رسمية على الإطلاق.\n\nتُجرى الاختبارات في أي سيرفر يختاره الأدمن وبأي مود لعب، والترتيب يعكس التقييم التنافسي داخل مجتمعنا.\n\nأدناه قائمة بالسيرفرات المعتمدة لإجراء الاختبارات، وزر عرض قائمة المتصدرين.",
     "newsContent": "تابع آخر أخبار وتحديثات مجتمع 𝑾𝒉𝒊𝒕𝒆 𝑲𝒊𝒏𝒈𝒅𝒐𝒎، مواعيد بطولات المبارزات، وتعديلات رولات ورومات السيرفر أولاً بأول.",
@@ -111,27 +117,247 @@
   ],
   "leaderboard": [
     {
-      "id": "player_1793558535737",
+      "id": "player_1793889482306",
       "notes": "",
-      "tierName": "HT3",
-      "tierRank": 6,
-      "createdAt": "2026-11-01T18:42:15.737Z",
+      "tierName": "HT5",
+      "tierRank": 2,
+      "createdAt": "2026-11-05T14:38:02.307Z",
+      "discordId": "1484598484559593613",
+      "updatedAt": "2026-11-05T14:38:02.307Z",
+      "gamesPlayed": [
+        {
+          "score": "0 - 6",
+          "details": "",
+          "gameName": "Skywars"
+        },
+        {
+          "score": "2 - 3",
+          "details": "",
+          "gameName": "Bridge"
+        },
+        {
+          "score": "0 - 1",
+          "details": "",
+          "gameName": "SG"
+        },
+        {
+          "score": "0 - 2",
+          "details": "",
+          "gameName": "Bedwars"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1484598484559593613/47388291af2e21bb90bb8b318d564fbe.png",
+      "minecraftName": "SteveYT6251",
+      "discordUsername": "steveyt6251",
+      "discordDisplayName": "ᴰᴸ¹⁰¹| 𝚂𝚝𝚎𝚟𝚎"
+    },
+    {
+      "id": "player_1793889601462",
+      "notes": "",
+      "tierName": "HT4",
+      "tierRank": 4,
+      "createdAt": "2026-11-05T14:40:01.462Z",
+      "discordId": "1521848696831086702",
+      "updatedAt": "2026-11-05T14:40:01.462Z",
+      "gamesPlayed": [
+        {
+          "score": "1 - 3",
+          "details": "",
+          "gameName": "Skywars Brawl"
+        },
+        {
+          "score": "0 - 2",
+          "details": "",
+          "gameName": "lBedfight"
+        },
+        {
+          "score": "0 - 1",
+          "details": "",
+          "gameName": "Midfight"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1521848696831086702/d146d78c42736a3625626ef9fd6bcdef.png",
+      "minecraftName": "Ataski Uchiha",
+      "discordUsername": "busy_57252",
+      "discordDisplayName": "亗 Ataski Uchiha 亗"
+    },
+    {
+      "id": "player_1793889863257",
+      "notes": "تدرب على ال hit since و الكومبو و هتصير لعيب",
+      "tierName": "HT5",
+      "tierRank": 2,
+      "createdAt": "2026-11-05T14:44:23.257Z",
+      "discordId": "1508982497655132290",
+      "updatedAt": "2026-11-05T14:44:23.257Z",
+      "gamesPlayed": [
+        {
+          "score": "0 - 6",
+          "details": "",
+          "gameName": "Skywars"
+        },
+        {
+          "score": "0 - 3",
+          "details": "",
+          "gameName": "Bridge"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1508982497655132290/5f52c815b057c4f567ce081133d6dfec.png",
+      "minecraftName": "Jo Jevin",
+      "discordUsername": "jevinoxo",
+      "discordDisplayName": "𝑱Ø JEVIN"
+    },
+    {
+      "id": "player_1793889964591",
+      "notes": "حسن نتك و حسن ايمك و هتكون قوي فالقتال",
+      "tierName": "LT4",
+      "tierRank": 3,
+      "createdAt": "2026-11-05T14:46:04.591Z",
+      "discordId": "1378121299074748537",
+      "updatedAt": "2026-11-05T14:46:23.864Z",
+      "gamesPlayed": [
+        {
+          "score": "2 - 6",
+          "details": "",
+          "gameName": "Skywars"
+        },
+        {
+          "score": "3 - 1",
+          "details": "",
+          "gameName": "Bridge"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1378121299074748537/3fd94fe10f67af84a7933f6f3e3358b2.png",
+      "minecraftName": "Yahya Yaser1919",
+      "discordUsername": "itzrivx",
+      "discordDisplayName": "ItzRivx"
+    },
+    {
+      "id": "player_1793890142521",
+      "notes": "",
+      "tierName": "HT4",
+      "tierRank": 4,
+      "createdAt": "2026-11-05T14:49:02.522Z",
+      "discordId": "1518260808625160233",
+      "updatedAt": "2026-11-05T14:49:02.522Z",
+      "gamesPlayed": [
+        {
+          "score": "0 - 3",
+          "details": "",
+          "gameName": "Skywars Ores"
+        },
+        {
+          "score": "0 - 2",
+          "details": "",
+          "gameName": "Skywars Brawls"
+        },
+        {
+          "score": "0 - 1",
+          "details": "",
+          "gameName": "Midfight"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1518260808625160233/acabdc3b904d190580bfd4785dd6594c.png",
+      "minecraftName": "abdo73104",
+      "discordUsername": "abdo98852425",
+      "discordDisplayName": "3bdo||513"
+    },
+    {
+      "id": "player_1793890359735",
+      "notes": "",
+      "tierName": "HT4",
+      "tierRank": 4,
+      "createdAt": "2026-11-05T14:52:39.735Z",
+      "discordId": "1455962671773126888",
+      "updatedAt": "2026-11-05T14:52:39.735Z",
+      "gamesPlayed": [
+        {
+          "score": "0 - 2",
+          "details": "",
+          "gameName": "Skywars Brawl"
+        },
+        {
+          "score": "1 - 1",
+          "details": "",
+          "gameName": "Skywars ores"
+        },
+        {
+          "score": "0 - 1",
+          "details": "",
+          "gameName": "Sumo"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1455962671773126888/b9bee95b5010a104726677696a2dfd55.png",
+      "minecraftName": "itz3bsii",
+      "discordUsername": "lokiiiexe",
+      "discordDisplayName": "R"
+    },
+    {
+      "id": "player_1793907731654",
+      "notes": "",
+      "tierName": "LT1",
+      "tierRank": 9,
+      "createdAt": "2026-11-05T19:42:11.654Z",
+      "discordId": "1460005098657943778",
+      "updatedAt": "2026-11-05T19:42:11.654Z",
+      "gamesPlayed": [
+        {
+          "score": "3 - 0",
+          "details": "",
+          "gameName": "Skywars ores"
+        },
+        {
+          "score": "2 - 1",
+          "details": "",
+          "gameName": "Skywars brawl"
+        },
+        {
+          "score": "2 - 1",
+          "details": "",
+          "gameName": "Bedfight"
+        },
+        {
+          "score": "2 - 0",
+          "details": "",
+          "gameName": "Boxing"
+        }
+      ],
+      "discordAvatar": "https://cdn.discordapp.com/avatars/1460005098657943778/b4fc780224d1e3c1f45969b25381f3a6.png",
+      "minecraftName": "ZEYAD GSX",
+      "discordUsername": "zeyadgsx",
+      "discordDisplayName": "乙乇ㄚ卂ᗪ ᘜ丂乂"
+    },
+    {
+      "id": "player_1793907963597",
+      "notes": "",
+      "tierName": "LT3",
+      "tierRank": 5,
+      "createdAt": "2026-11-05T19:46:03.597Z",
       "discordId": "1523008875152937083",
-      "updatedAt": "2026-11-01T20:05:21.364Z",
+      "updatedAt": "2026-11-05T19:46:03.597Z",
       "gamesPlayed": [
         {
           "score": "3 - 1",
-          "details": "تحكم ممتاز في الشيلد وتوقيت التوتم",
-          "gameName": "Netherite Pot (SMP)"
+          "details": "",
+          "gameName": "Skywars ores"
         },
         {
-          "score": "3 - 0",
-          "details": "سرعة وضع وتفجير الكريستال بدقة",
-          "gameName": "Crystal PvP"
+          "score": "3 - 2",
+          "details": "",
+          "gameName": "Skywars brawl"
+        },
+        {
+          "score": "1 - 2",
+          "details": "",
+          "gameName": "Bedfight"
+        },
+        {
+          "score": "2 - 0",
+          "details": "",
+          "gameName": "Boxing"
         }
       ],
       "discordAvatar": "https://cdn.discordapp.com/avatars/1523008875152937083/74ac55471f30cacc4493a6c4c84e96d7.png?size=256",
-      "minecraftName": "اختبار 1",
+      "minecraftName": "iTz Kaion",
       "discordUsername": "itz_kaion",
       "discordDisplayName": "itz_kaion"
     }
@@ -194,13 +420,13 @@
     {
       "name": "HT1",
       "rank": 10,
-      "color": "#00e5ff",
+      "color": "#ff0000",
       "label": "High Tier 1 (Apex Master)"
     },
     {
       "name": "LT1",
       "rank": 9,
-      "color": "#ef4444",
+      "color": "#a30000",
       "label": "Low Tier 1"
     },
     {
@@ -230,29 +456,63 @@
     {
       "name": "HT4",
       "rank": 4,
-      "color": "#94a3b8",
+      "color": "#aa00ff",
       "label": "High Tier 4"
     },
     {
       "name": "LT4",
       "rank": 3,
-      "color": "#64748b",
+      "color": "#86009e",
       "label": "Low Tier 4"
     },
     {
       "name": "HT5",
       "rank": 2,
-      "color": "#475569",
+      "color": "#ff00f7",
       "label": "High Tier 5"
     },
     {
       "name": "LT5",
       "rank": 1,
-      "color": "#334155",
+      "color": "#b500b2",
       "label": "Low Tier 5 (Novice)"
     }
   ],
   "loginLogs": [
+    {
+      "id": "log_1793955920965_treew",
+      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/233a0daca4496bed79938152877b62f8.png?size=256",
+      "loginAt": "2026-11-06T09:05:20.965Z",
+      "username": "itz_white_kh",
+      "discordId": "1324725244073873539",
+      "ipAddress": "10.0.0.2",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "loginCount": 4,
+      "displayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
+    },
+    {
+      "id": "log_1793952074799_5oxws",
+      "avatar": "https://cdn.discordapp.com/avatars/1483645685369933905/be6cb6ee85c492c6c4590b3f1d00cd44.png?size=256",
+      "loginAt": "2026-11-06T08:01:14.799Z",
+      "username": "upr_a",
+      "discordId": "1483645685369933905",
+      "ipAddress": "10.0.0.2",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36 Edg/156.0.0.0",
+      "loginCount": 3,
+      "displayName": "JOI",
+      "minecraftName": "Dream"
+    },
+    {
+      "id": "log_1793890886381_2a87c",
+      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
+      "loginAt": "2026-11-05T15:01:26.381Z",
+      "username": "itz_white_kh",
+      "discordId": "1324725244073873539",
+      "ipAddress": "10.0.0.2",
+      "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "loginCount": 2,
+      "displayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
+    },
     {
       "id": "log_1793716848498_qs602",
       "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
@@ -278,8 +538,8 @@
   ],
   "discordProfileCache": {
     "1324725244073873539": {
-      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/94f6605b6a3c19a765e66e00e7c2caa2.png?size=256",
-      "cachedAt": "2026-11-03T14:40:48.498Z",
+      "avatar": "https://cdn.discordapp.com/avatars/1324725244073873539/233a0daca4496bed79938152877b62f8.png?size=256",
+      "cachedAt": "2026-11-06T09:05:20.965Z",
       "username": "itz_white_kh",
       "displayName": "ᎳᎻᏆᎿᎬ ᏚᎪᎷᎪ"
     },
@@ -295,11 +555,41 @@
       "username": "zeyadgsx1",
       "displayName": "乙乇ㄚ卂ᗪ ᘜ丂乂"
     },
+    "1455962671773126888": {
+      "avatar": "https://cdn.discordapp.com/avatars/1455962671773126888/b9bee95b5010a104726677696a2dfd55.png",
+      "cachedAt": "2026-11-05T14:51:29.089Z",
+      "username": "lokiiiexe",
+      "displayName": "R"
+    },
+    "1460005098657943778": {
+      "avatar": "https://cdn.discordapp.com/avatars/1460005098657943778/b4fc780224d1e3c1f45969b25381f3a6.png",
+      "cachedAt": "2026-11-05T14:49:25.038Z",
+      "username": "zeyadgsx",
+      "displayName": "乙乇ㄚ卂ᗪ ᘜ丂乂"
+    },
+    "1483645685369933905": {
+      "avatar": "https://cdn.discordapp.com/avatars/1483645685369933905/be6cb6ee85c492c6c4590b3f1d00cd44.png?size=256",
+      "cachedAt": "2026-11-06T08:01:14.799Z",
+      "username": "upr_a",
+      "displayName": "JOI"
+    },
     "1484598484559593613": {
       "avatar": "https://cdn.discordapp.com/avatars/1484598484559593613/47388291af2e21bb90bb8b318d564fbe.png",
       "cachedAt": "2026-11-03T09:34:06.538Z",
       "username": "steveyt6251",
       "displayName": "ᴰᴸ¹⁰¹| 𝚂𝚝𝚎𝚟𝚎"
+    },
+    "1508982497655132290": {
+      "avatar": "https://cdn.discordapp.com/avatars/1508982497655132290/5f52c815b057c4f567ce081133d6dfec.png",
+      "cachedAt": "2026-11-05T14:42:47.266Z",
+      "username": "jevinoxo",
+      "displayName": "𝑱Ø JEVIN"
+    },
+    "1518260808625160233": {
+      "avatar": "https://cdn.discordapp.com/avatars/1518260808625160233/acabdc3b904d190580bfd4785dd6594c.png",
+      "cachedAt": "2026-11-05T14:47:59.134Z",
+      "username": "abdo98852425",
+      "displayName": "3bdo||513"
     },
     "1521848696831086702": {
       "avatar": "https://cdn.discordapp.com/avatars/1521848696831086702/d146d78c42736a3625626ef9fd6bcdef.png",

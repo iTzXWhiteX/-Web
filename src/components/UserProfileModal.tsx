@@ -150,50 +150,62 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           glowIntensity={1.2}
           backgroundColor="#080e1e"
           colors={['#2563eb', '#00e5ff', '#ffffff']}
-          className="w-full max-h-[90vh] flex flex-col shadow-[0_0_50px_rgba(0,229,255,0.25)] animate-in zoom-in-95 duration-200 overflow-hidden"
+          className="w-full max-h-[90vh] shadow-[0_0_50px_rgba(0,229,255,0.25)] animate-in zoom-in-95 duration-200 overflow-hidden"
         >
-          {/* Header Banner - Fixed at top */}
-          <div className="flex-shrink-0 relative h-28 sm:h-32 bg-gradient-to-r from-blue-950 via-slate-900 to-cyan-950 border-b border-cyan-500/20 flex items-end px-6 pb-3">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-cyan-500/15 via-transparent to-transparent pointer-events-none" />
-
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="glow-btn absolute top-3.5 left-3.5 p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-cyan-400 transition-colors cursor-pointer"
-              aria-label="إغلاق"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Quick Admin Badge */}
-            {user.isAdmin && (
-              <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/60 text-cyan-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(0,229,255,0.3)]">
-                <Shield className="w-3.5 h-3.5" />
-                <span>إدارة السيرفر</span>
+          {/* Clean Top Bar - Fixed at top with title, badges, and close button */}
+          <div className="flex-shrink-0 relative px-5 sm:px-6 py-4 bg-gradient-to-r from-blue-950/90 via-slate-900 to-cyan-950/90 border-b border-cyan-500/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+                <User className="w-4 h-4" />
               </div>
-            )}
+              <div>
+                <h3 className="text-sm sm:text-base font-heading font-bold text-white flex items-center gap-2">
+                  <span>الملف الشخصي والتقييم</span>
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Quick Admin Badge */}
+              {user.isAdmin && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/60 text-cyan-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(0,229,255,0.3)]">
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>إدارة السيرفر</span>
+                </div>
+              )}
+
+              {/* Close button */}
+              <button
+                onClick={onClose}
+                className="glow-btn p-2 rounded-xl bg-slate-900/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-cyan-400 transition-colors cursor-pointer"
+                aria-label="إغلاق"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Profile Card Body - Flex-1 with min-h-0 allows smooth scroll without overflow */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar px-4 sm:px-7 pb-6 pt-2">
-            {/* Avatar and Main Info row */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-14 sm:-mt-16 mb-5 text-center sm:text-right">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar px-4 sm:px-6 py-5">
+            {/* Unified Avatar and Main Info Card (No dividing line cutting through avatar) */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 mb-5 p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 text-center sm:text-right">
               <div className="relative group flex-shrink-0">
                 <img
                   src={resolveAvatarUrl(user.avatar, user.discordId)}
                   alt={user.username}
                   onError={(e) => handleAvatarImgError(e, user.discordId)}
-                  className="w-22 h-22 sm:w-26 sm:h-26 rounded-2xl border-2 border-cyan-400 object-cover shadow-[0_0_25px_rgba(0,229,255,0.4)] bg-slate-950"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-cyan-400 object-cover shadow-[0_0_25px_rgba(0,229,255,0.4)] bg-slate-950"
                 />
                 <span
-                  className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_#10b981]"
+                  className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full bg-emerald-500 border-2 border-slate-950 shadow-[0_0_8px_#10b981]"
                   title="متصل وموثق"
                 />
               </div>
 
               <div className="flex-1 min-w-0">
                 <h2 className="font-heading font-extrabold text-xl sm:text-2xl text-white truncate flex items-center justify-center sm:justify-start gap-2">
-                  <span>{user.globalName || user.username}</span>
+                  <span className="truncate">{user.globalName || user.username}</span>
                   {tierDef && (
                     <span
                       className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-extrabold text-black flex-shrink-0 shadow-sm"
@@ -210,7 +222,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 {/* Discord ID Copy Pill */}
                 <button
                   onClick={handleCopyDiscordId}
-                  className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono text-cyan-300 hover:border-cyan-500/50 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-xs font-mono text-cyan-300 hover:border-cyan-500/50 transition-all cursor-pointer"
                   title="اضغط لنسخ Discord ID"
                 >
                   <span className="text-[10px] text-slate-400">Discord ID:</span>

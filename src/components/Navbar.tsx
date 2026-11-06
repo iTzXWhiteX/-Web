@@ -236,48 +236,82 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {userDropdownOpen && (
                 <div
-                  className="absolute left-0 sm:left-0 right-auto mt-2 w-64 sm:w-72 max-w-[calc(100vw-1.5rem)] max-h-[85vh] overflow-y-auto glow-window rounded-2xl shadow-2xl py-2 z-50 text-right animate-in fade-in zoom-in-95 duration-150"
+                  className="!absolute top-full left-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-[#0a101f]/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_25px_rgba(0,229,255,0.25)] py-2 z-50 text-right animate-in fade-in zoom-in-95 duration-150 overflow-hidden border border-cyan-500/30"
+                  style={{ minWidth: '270px' }}
                 >
-                  <div className="px-4 py-2.5 border-b border-slate-800">
-                    <p className="text-[11px] text-slate-400">حساب ديسكورد المسجل</p>
-                    <p className="text-sm font-bold text-white truncate">{user.globalName || user.username}</p>
-                    <p className="text-[11px] font-mono text-cyan-400 mt-0.5 break-all" dir="ltr">ID: {user.discordId}</p>
+                  {/* User Profile Card Header inside the Dropdown */}
+                  <div className="p-3.5 border-b border-slate-800/90 bg-slate-900/60 flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                      <img
+                        src={resolveAvatarUrl(user.avatar, user.discordId)}
+                        alt={user.username}
+                        onError={(e) => handleAvatarImgError(e, user.discordId)}
+                        className="w-11 h-11 rounded-xl border border-cyan-400/60 object-cover bg-slate-950 shadow-sm"
+                      />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-slate-950 shadow-[0_0_5px_#10b981]" title="متصل" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-right">
+                      <div className="font-heading font-bold text-sm text-white truncate flex items-center gap-1.5">
+                        <span className="truncate">{user.globalName || user.username}</span>
+                        {user.isAdmin && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold flex-shrink-0">ADMIN</span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-mono text-slate-400 truncate" dir="ltr">@{user.username}</p>
+                      <p className="text-[10px] font-mono text-cyan-400/90 truncate mt-0.5" dir="ltr">ID: {user.discordId}</p>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      onOpenProfile();
-                    }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-white hover:bg-cyan-500/15 hover:text-cyan-300 transition-colors text-right font-semibold cursor-pointer"
-                  >
-                    <User className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>عرض ملفي الشخصي والتقييم</span>
-                  </button>
-
-                  {user.isAdmin && (
+                  {/* Dropdown Options */}
+                  <div className="py-1">
                     <button
                       onClick={() => {
                         setUserDropdownOpen(false);
-                        onNavigate('admin');
+                        onOpenProfile();
                       }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-cyan-300 hover:bg-cyan-500/20 transition-colors text-right font-semibold cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-white hover:bg-cyan-500/15 hover:text-cyan-300 transition-colors text-right font-semibold cursor-pointer"
                     >
-                      <Shield className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>فتح لوحة الإدارة</span>
+                      <User className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                      <span>عرض الملف الشخصي</span>
                     </button>
-                  )}
 
-                  <button
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      onLogout();
-                    }}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:bg-red-950/30 transition-colors text-right font-medium cursor-pointer border-t border-slate-800/80 mt-1"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>تسجيل الخروج</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onNavigate('tier-test');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-slate-300 hover:bg-cyan-500/15 hover:text-cyan-300 transition-colors text-right font-semibold cursor-pointer"
+                    >
+                      <Swords className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                      <span>التقييم واختبار المستويات</span>
+                    </button>
+
+                    {user.isAdmin && (
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          onNavigate('admin');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-cyan-300 hover:bg-cyan-500/20 transition-colors text-right font-semibold cursor-pointer"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                        <span>فتح لوحة الإدارة</span>
+                      </button>
+                    )}
+
+                    <div className="my-1 border-t border-slate-800/80" />
+
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:bg-red-950/30 transition-colors text-right font-medium cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>تسجيل الخروج</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
